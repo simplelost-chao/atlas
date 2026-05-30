@@ -16,7 +16,7 @@ export function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="flex h-screen w-56 flex-col border-r border-gray-200 bg-gray-50">
+    <aside className="hidden md:flex h-screen w-56 flex-col border-r border-gray-200 bg-gray-50">
       <div className="p-4">
         <Link href="/app" className="text-xl font-bold">
           Atlas

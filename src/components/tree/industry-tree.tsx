@@ -141,7 +141,7 @@ export function IndustryTree({
 
   return (
     <div className="relative h-full w-full overflow-hidden rounded-lg border border-gray-200 bg-gray-50">
-      <svg ref={svgRef} className="h-full w-full">
+      <svg ref={svgRef} className="h-full w-full touch-none">
         <defs>
           <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
             <feDropShadow

@@ -158,11 +158,11 @@ export default function ProjectPage({
   return (
     <div className="flex min-h-full flex-col">
       {/* Top bar */}
-      <div className="flex shrink-0 items-center justify-between border-b border-gray-200 px-4 py-3">
+      <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-b border-gray-200 px-4 py-3">
         <h1 className="text-lg font-bold">
           {results?.project?.name ?? "项目详情"}
         </h1>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {hasData && (
             <Button
               variant="outline"
@@ -193,7 +193,7 @@ export default function ProjectPage({
       )}
 
       {/* Tree visualization — fixed height, never shrinks */}
-      <div className="relative shrink-0" style={{ height: "500px" }}>
+      <div className="relative shrink-0 h-[300px] md:h-[500px]">
         {hasData ? (
           <>
             <SearchBar
@@ -267,7 +267,7 @@ export default function ProjectPage({
               {/* Description */}
               <p className="mt-1 text-xs text-gray-500 line-clamp-2">{selectedNodeDetail.description}</p>
               {/* Metrics row */}
-              <div className="mt-2 flex gap-6">
+              <div className="mt-2 flex flex-wrap gap-4">
                 {selectedNodeDetail.profitMargin && (
                   <div>
                     <span className="text-xs text-gray-400">利润率 </span>
