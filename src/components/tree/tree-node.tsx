@@ -71,7 +71,7 @@ export function TreeNodeComponent({
         height={NODE_HEIGHT}
         rx={8}
         ry={8}
-        fill="#1F2937"
+        fill="white"
         stroke={isSelected ? "#C59D5F" : isHighlighted ? "#fbbf24" : color}
         strokeWidth={isSelected ? 2.5 : 1.5}
         className="transition-all duration-200"
@@ -104,7 +104,7 @@ export function TreeNodeComponent({
         x={-NODE_WIDTH / 2 + 14}
         fontSize="13"
         fontWeight="600"
-        fill="#F9FAFB"
+        fill="#1F2937"
         textAnchor="start"
       >
         {data.name.length > 14 ? data.name.slice(0, 14) + "..." : data.name}
@@ -140,7 +140,7 @@ export function TreeNodeComponent({
             onNodeToggle(node);
           }}
         >
-          <circle r={12} fill="#374151" stroke={color} strokeWidth={1.5} />
+          <circle r={12} fill="white" stroke={color} strokeWidth={1.5} />
           {isCollapsed ? (
             <>
               <text fontSize="12" fill={color} textAnchor="middle" dy="0.35em" fontWeight="bold">

@@ -50,12 +50,12 @@ export function GenerationProgress({
   const isFailed = data.status === "FAILED";
 
   return (
-    <Card className={`bg-[#1F2937] border-[#374151] ${isActive ? "border-yellow-700" : isFailed ? "border-red-800" : ""}`}>
+    <Card className={`bg-white border-gray-200 ${isActive ? "border-yellow-400" : isFailed ? "border-red-400" : ""}`}>
       <CardHeader className="pb-2 cursor-pointer" onClick={() => setExpanded(!expanded)}>
         <CardTitle className="flex items-center justify-between text-sm font-medium">
           <div className="flex items-center gap-2">
-            <span className="text-[#6B7280]">{expanded ? "▼" : "▶"}</span>
-            <span className="text-white">生成状态</span>
+            <span className="text-gray-400">{expanded ? "▼" : "▶"}</span>
+            <span className="text-gray-700">生成状态</span>
           </div>
           <div className="flex items-center gap-2">
             {isActive && (
@@ -67,7 +67,7 @@ export function GenerationProgress({
             {isFailed && (
               <div className="h-2.5 w-2.5 rounded-full bg-red-500" />
             )}
-            <span className="text-xs font-normal text-[#9CA3AF]">
+            <span className="text-xs font-normal text-gray-500">
               {statusLabels[data.status] ?? data.status}
             </span>
           </div>
@@ -76,7 +76,7 @@ export function GenerationProgress({
       {expanded && <CardContent className="space-y-3">
         {/* Stats */}
         {(isActive || data.status === "COMPLETED") && (
-          <div className="flex gap-4 text-xs text-[#9CA3AF]">
+          <div className="flex gap-4 text-xs text-gray-500">
             <span>环节: {data.nodeCount}</span>
             <span>公司: {data.companyCount}</span>
             {totalCost > 0 && <span>开销: ${totalCost.toFixed(4)}</span>}
@@ -85,7 +85,7 @@ export function GenerationProgress({
 
         {/* Log entries */}
         {logs.length > 0 && (
-          <div className="max-h-96 overflow-y-auto rounded bg-[#111827] p-2">
+          <div className="max-h-96 overflow-y-auto rounded bg-gray-50 p-2">
             <div className="space-y-1">
               {logs.map((log, i) => {
                 const isMultiLine = log.message.includes("\n");
@@ -93,7 +93,7 @@ export function GenerationProgress({
                 return (
                   <div key={i} className={`text-xs ${isResult ? "border-l-2 border-[#C59D5F]/40 pl-2 py-1" : ""}`}>
                     <div className="flex items-center gap-2">
-                      <span className="shrink-0 text-[#6B7280]">
+                      <span className="shrink-0 text-gray-400">
                         {new Date(log.timestamp).toLocaleTimeString("zh-CN")}
                       </span>
                       <span
@@ -110,21 +110,21 @@ export function GenerationProgress({
                         {log.stepName}
                       </span>
                       {!isMultiLine && (
-                        <span className="flex-1 text-[#9CA3AF]">{log.message}</span>
+                        <span className="flex-1 text-gray-600">{log.message}</span>
                       )}
                       {log.durationMs != null && log.durationMs > 0 && (
-                        <span className="shrink-0 text-[#6B7280]">
+                        <span className="shrink-0 text-gray-400">
                           {(log.durationMs / 1000).toFixed(1)}s
                         </span>
                       )}
                       {log.costUSD != null && log.costUSD > 0 && (
-                        <span className="shrink-0 text-[#6B7280]">
+                        <span className="shrink-0 text-gray-400">
                           ${log.costUSD.toFixed(4)}
                         </span>
                       )}
                     </div>
                     {isMultiLine && (
-                      <pre className="mt-1 whitespace-pre-wrap text-[#9CA3AF] leading-relaxed">
+                      <pre className="mt-1 whitespace-pre-wrap text-gray-600 leading-relaxed">
                         {log.message}
                       </pre>
                     )}
@@ -132,7 +132,7 @@ export function GenerationProgress({
                 );
               })}
               {isActive && (
-                <div className="flex items-center gap-2 text-xs text-[#6B7280]">
+                <div className="flex items-center gap-2 text-xs text-gray-400">
                   <span className="animate-pulse">●</span>
                   <span>处理中...</span>
                 </div>

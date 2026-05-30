@@ -32,17 +32,17 @@ export default function ProjectsPage() {
   return (
     <div className="p-4 md:p-6">
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-white">项目列表</h1>
+        <h1 className="text-2xl font-bold text-gray-900">项目列表</h1>
         <Link href="/app/projects/new">
           <Button className="bg-[#C59D5F] text-white hover:bg-[#D4AD6F]">新建项目</Button>
         </Link>
       </div>
 
       {!projects || projects.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-[#374151] py-16">
-          <p className="text-[#6B7280]">还没有项目</p>
+        <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-gray-300 py-16">
+          <p className="text-gray-500">还没有项目</p>
           <Link href="/app/projects/new" className="mt-4">
-            <Button variant="outline" className="border-[#374151] text-[#9CA3AF] hover:bg-[#1F2937] hover:text-white">
+            <Button variant="outline" className="border-gray-300 bg-white text-gray-700 hover:border-[#C59D5F]">
               创建第一个项目
             </Button>
           </Link>
@@ -51,16 +51,16 @@ export default function ProjectsPage() {
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {projects.map((project) => (
             <Link key={project.id} href={`/app/projects/${project.id}`}>
-              <Card className="cursor-pointer bg-[#1F2937] border-[#374151] transition-all hover:border-[#C59D5F] hover:shadow-md hover:shadow-[#C59D5F]/10">
+              <Card className="cursor-pointer bg-white border-gray-200 transition-all hover:border-[#C59D5F] hover:shadow-md">
                 <CardHeader>
-                  <CardTitle className="text-white">{project.name}</CardTitle>
+                  <CardTitle className="text-gray-900">{project.name}</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm text-[#9CA3AF]">
+                  <p className="text-sm text-gray-600">
                     行业：{project.industry}
                   </p>
                   {project.chain && (
-                    <p className="mt-1 text-xs text-[#6B7280]">
+                    <p className="mt-1 text-xs text-gray-500">
                       {STATUS_LABELS[project.chain.status] ?? project.chain.status}
                     </p>
                   )}

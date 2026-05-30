@@ -44,17 +44,17 @@ export default function NewProjectPage() {
 
   return (
     <div className="mx-auto max-w-lg p-4 md:p-6">
-      <Card className="bg-[#1F2937] border-[#374151]">
+      <Card className="bg-white border-gray-200">
         <CardHeader>
-          <CardTitle className="text-white">新建项目</CardTitle>
+          <CardTitle className="text-gray-900">新建项目</CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
-              <p className="text-sm text-red-400 text-center">{error}</p>
+              <p className="text-sm text-red-500 text-center">{error}</p>
             )}
             <div className="space-y-2">
-              <label htmlFor="name" className="text-sm font-medium text-[#9CA3AF]">
+              <label htmlFor="name" className="text-sm font-medium text-gray-700">
                 项目名称
               </label>
               <Input
@@ -63,11 +63,11 @@ export default function NewProjectPage() {
                 onChange={(e) => setName(e.target.value)}
                 placeholder="例如：AI产业链分析"
                 required
-                className="bg-[#111827] border-[#374151] text-white placeholder:text-[#4B5563]"
+                className="bg-white border-gray-300 text-gray-900 placeholder:text-gray-400"
               />
             </div>
             <div className="space-y-2">
-              <label htmlFor="industry" className="text-sm font-medium text-[#9CA3AF]">
+              <label htmlFor="industry" className="text-sm font-medium text-gray-700">
                 行业关键词
               </label>
               <Input
@@ -76,18 +76,18 @@ export default function NewProjectPage() {
                 onChange={(e) => setIndustry(e.target.value)}
                 placeholder="例如：AI、半导体、新能源"
                 required
-                className="bg-[#111827] border-[#374151] text-white placeholder:text-[#4B5563]"
+                className="bg-white border-gray-300 text-gray-900 placeholder:text-gray-400"
               />
             </div>
             <div className="space-y-2">
-              <label htmlFor="description" className="text-sm font-medium text-[#9CA3AF]">
+              <label htmlFor="description" className="text-sm font-medium text-gray-700">
                 描述（可选）
               </label>
               <textarea
                 id="description"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="flex min-h-[80px] w-full rounded-md border border-[#374151] bg-[#111827] px-3 py-2 text-sm text-white shadow-sm placeholder:text-[#4B5563] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#C59D5F]"
+                className="flex min-h-[80px] w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm placeholder:text-gray-400 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#C59D5F]"
                 placeholder="项目背景和目标..."
               />
             </div>
@@ -96,7 +96,7 @@ export default function NewProjectPage() {
                 type="button"
                 variant="outline"
                 onClick={() => router.back()}
-                className="border-[#374151] text-[#9CA3AF] hover:bg-[#374151] hover:text-white"
+                className="border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
               >
                 取消
               </Button>

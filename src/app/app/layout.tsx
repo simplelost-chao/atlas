@@ -9,9 +9,40 @@ import { TeamContext, useTeamData } from "@/hooks/use-team";
 import { AtlasLogo, AtlasWordmark } from "@/components/atlas-logo";
 
 const navItems = [
-  { label: "项目", href: "/app/projects" },
-  { label: "团队", href: "/app/team" },
-  { label: "设置", href: "/app/settings" },
+  {
+    label: "项目",
+    href: "/app/projects",
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="3" y="3" width="7" height="7" rx="1" />
+        <rect x="14" y="3" width="7" height="7" rx="1" />
+        <rect x="3" y="14" width="7" height="7" rx="1" />
+        <rect x="14" y="14" width="7" height="7" rx="1" />
+      </svg>
+    ),
+  },
+  {
+    label: "团队",
+    href: "/app/team",
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="9" cy="7" r="4" />
+        <path d="M3 21v-2a4 4 0 014-4h4a4 4 0 014 4v2" />
+        <path d="M16 3.13a4 4 0 010 7.75" />
+        <path d="M21 21v-2a4 4 0 00-3-3.87" />
+      </svg>
+    ),
+  },
+  {
+    label: "设置",
+    href: "/app/settings",
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="3" />
+        <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" />
+      </svg>
+    ),
+  },
 ];
 
 function MobileNav() {
@@ -48,8 +79,8 @@ function DesktopSidebar() {
     <aside className="hidden md:flex h-screen w-56 flex-col border-r border-[#1F2937] bg-[#111827]">
       <div className="p-4">
         <Link href="/app" className="flex items-center gap-2">
-          <AtlasLogo size={28} />
-          <AtlasWordmark />
+          <AtlasLogo size={28} color="white" />
+          <AtlasWordmark className="text-white" />
         </Link>
       </div>
       <nav className="flex-1 space-y-1 px-2">
@@ -61,10 +92,13 @@ function DesktopSidebar() {
               "block rounded-md px-3 py-2 text-sm transition-colors",
               pathname.startsWith(item.href)
                 ? "bg-[#C59D5F]/10 font-medium text-[#C59D5F]"
-                : "text-[#6B7280] hover:bg-[#1F2937] hover:text-white"
+                : "text-[#9CA3AF] hover:text-white hover:bg-white/5"
             )}
           >
-            {item.label}
+            <div className="flex items-center gap-3">
+              {item.icon}
+              <span>{item.label}</span>
+            </div>
           </Link>
         ))}
       </nav>
@@ -88,7 +122,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     <TeamContext.Provider value={teamData}>
       <div className="flex h-screen">
         <DesktopSidebar />
-        <main className="flex-1 overflow-auto bg-[#111827] pb-16 md:pb-0">
+        <main className="flex-1 overflow-auto bg-[#F3F4F6] pb-16 md:pb-0">
           {children}
         </main>
         <MobileNav />

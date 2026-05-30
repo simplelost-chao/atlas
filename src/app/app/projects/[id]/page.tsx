@@ -158,8 +158,8 @@ export default function ProjectPage({
   return (
     <div className="flex min-h-full flex-col">
       {/* Top bar */}
-      <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-b border-[#1F2937] bg-[#111827] px-4 py-3">
-        <h1 className="text-lg font-bold text-white">
+      <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-b border-gray-200 bg-white px-4 py-3">
+        <h1 className="text-lg font-bold text-gray-900">
           {results?.project?.name ?? "项目详情"}
         </h1>
         <div className="flex flex-wrap items-center gap-2">
@@ -171,7 +171,7 @@ export default function ProjectPage({
               onClick={() => {
                 if (teamId) backfill.mutate({ teamId, projectId });
               }}
-              className="border-[#374151] text-[#9CA3AF] hover:bg-[#1F2937] hover:text-white"
+              className="border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
             >
               {backfill.isPending ? "补全中..." : "补全公司"}
             </Button>
@@ -189,7 +189,7 @@ export default function ProjectPage({
 
       {/* Generation progress — self-collapsible */}
       {teamId && (
-        <div className="shrink-0 border-b border-[#1F2937] px-4 py-3">
+        <div className="shrink-0 border-b border-gray-200 px-4 py-3">
           <GenerationProgress teamId={teamId} projectId={projectId} />
         </div>
       )}
@@ -228,13 +228,13 @@ export default function ProjectPage({
 
       {/* Bottom panel — selected node details + companies */}
       {selectedNodeId && (
-        <div className="min-h-[400px] overflow-y-auto border-t border-[#1F2937] bg-[#111827]">
+        <div className="min-h-[400px] overflow-y-auto border-t border-gray-200 bg-white">
           {/* Node info header */}
           {selectedNodeDetail && (
-            <div className="border-b border-[#1F2937] bg-[#1F2937] px-6 py-3">
+            <div className="border-b border-gray-100 bg-white px-6 py-3">
               {/* Title row */}
               <div className="flex items-center justify-between">
-                <h2 className="text-base font-semibold text-white">{selectedNodeDetail.name}</h2>
+                <h2 className="text-base font-semibold text-gray-900">{selectedNodeDetail.name}</h2>
                 <div className="flex items-center gap-2">
                   {!selectedNodeHasChildren && selectedNodeId !== "industry-root" && (
                     <Button
@@ -247,7 +247,7 @@ export default function ProjectPage({
                         const interval = setInterval(() => refetchResults(), 3000);
                         setTimeout(() => clearInterval(interval), 180_000);
                       }}
-                      className="border-[#374151] text-[#9CA3AF] hover:bg-[#374151] hover:text-white"
+                      className="border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
                     >
                       {expandNode.isPending ? "挖掘中..." : "继续挖掘 ↓"}
                     </Button>
@@ -256,7 +256,7 @@ export default function ProjectPage({
                     <span className="rounded bg-[#10B981]/10 px-2 py-1 text-xs text-[#10B981]">已展开</span>
                   )}
                   <button
-                    className="text-sm text-[#6B7280] hover:text-white"
+                    className="text-sm text-gray-400 hover:text-gray-700"
                     onClick={() => {
                       setSelectedNodeId(null);
                       setNodeCompanies([]);
@@ -268,25 +268,25 @@ export default function ProjectPage({
                 </div>
               </div>
               {/* Description */}
-              <p className="mt-1 text-xs text-[#9CA3AF] line-clamp-2">{selectedNodeDetail.description}</p>
+              <p className="mt-1 text-xs text-gray-500 line-clamp-2">{selectedNodeDetail.description}</p>
               {/* Metrics row */}
               <div className="mt-2 flex flex-wrap gap-4">
                 {selectedNodeDetail.profitMargin && (
                   <div>
-                    <span className="text-xs text-[#6B7280]">利润率 </span>
-                    <span className="text-sm font-medium text-white">{selectedNodeDetail.profitMargin}</span>
+                    <span className="text-xs text-gray-500">利润率 </span>
+                    <span className="text-sm font-medium text-gray-900">{selectedNodeDetail.profitMargin}</span>
                   </div>
                 )}
                 {selectedNodeDetail.marketSize && (
                   <div>
-                    <span className="text-xs text-[#6B7280]">市场规模 </span>
-                    <span className="text-sm font-medium text-white">{selectedNodeDetail.marketSize}</span>
+                    <span className="text-xs text-gray-500">市场规模 </span>
+                    <span className="text-sm font-medium text-gray-900">{selectedNodeDetail.marketSize}</span>
                   </div>
                 )}
                 {selectedNodeDetail.growthTrend && (
                   <div>
-                    <span className="text-xs text-[#6B7280]">增长趋势 </span>
-                    <span className="text-sm font-medium text-white">{selectedNodeDetail.growthTrend}</span>
+                    <span className="text-xs text-gray-500">增长趋势 </span>
+                    <span className="text-sm font-medium text-gray-900">{selectedNodeDetail.growthTrend}</span>
                   </div>
                 )}
               </div>
@@ -309,21 +309,21 @@ export default function ProjectPage({
             </div>
           ) : nodeCompanies.length > 0 ? (
             <div className="p-4">
-              <h3 className="mb-3 text-sm font-semibold text-[#9CA3AF]">
+              <h3 className="mb-3 text-sm font-semibold text-gray-500">
                 「{selectedNodeName}」相关公司 ({nodeCompanies.length})
               </h3>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {nodeCompanies.map((company) => (
                   <button
                     key={company.id}
-                    className="rounded-lg border border-[#374151] bg-[#1F2937] p-4 text-left transition-all hover:border-[#C59D5F] hover:shadow-sm hover:shadow-[#C59D5F]/10"
+                    className="rounded-lg border border-gray-200 bg-white p-4 text-left transition-all hover:border-[#C59D5F] hover:shadow-md"
                     onClick={() => setSelectedCompany(company)}
                   >
                     <div className="flex items-start justify-between">
                       <div>
-                        <div className="font-medium text-white">{company.name}</div>
+                        <div className="font-medium text-gray-900">{company.name}</div>
                         {company.ticker && (
-                          <div className="text-xs text-[#6B7280]">
+                          <div className="text-xs text-gray-500">
                             {company.exchange}:{company.ticker}
                           </div>
                         )}
@@ -336,11 +336,11 @@ export default function ProjectPage({
                         {POSITION_LABELS[company.marketPosition] ?? company.marketPosition}
                       </span>
                     </div>
-                    <p className="mt-2 text-xs text-[#9CA3AF] line-clamp-2">
+                    <p className="mt-2 text-xs text-gray-500 line-clamp-2">
                       {company.mainBusiness}
                     </p>
                     {(company.revenue || company.marketCap) && (
-                      <div className="mt-2 flex gap-3 text-xs text-[#6B7280]">
+                      <div className="mt-2 flex gap-3 text-xs text-gray-500">
                         {company.marketCap && <span>市值: {company.marketCap}</span>}
                         {company.revenue && <span>营收: {company.revenue}</span>}
                         {company.grossMargin && <span>毛利率: {company.grossMargin}</span>}
@@ -359,7 +359,7 @@ export default function ProjectPage({
             </div>
           ) : (
             <div className="flex items-center justify-center py-8">
-              <p className="text-sm text-[#6B7280]">该环节暂无公司数据</p>
+              <p className="text-sm text-gray-500">该环节暂无公司数据</p>
             </div>
           )}
         </div>

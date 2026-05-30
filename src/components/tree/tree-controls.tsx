@@ -22,7 +22,7 @@ export function TreeControls({
         size="icon"
         onClick={onZoomIn}
         title="放大"
-        className="h-10 w-10 md:h-8 md:w-8 bg-[#1F2937] border-[#374151] text-[#9CA3AF] hover:bg-[#374151] hover:text-white"
+        className="h-10 w-10 md:h-8 md:w-8 bg-white border-gray-200 text-gray-600 hover:bg-gray-50 hover:text-gray-900"
       >
         <span className="text-lg">+</span>
       </Button>
@@ -31,7 +31,7 @@ export function TreeControls({
         size="icon"
         onClick={onZoomOut}
         title="缩小"
-        className="h-10 w-10 md:h-8 md:w-8 bg-[#1F2937] border-[#374151] text-[#9CA3AF] hover:bg-[#374151] hover:text-white"
+        className="h-10 w-10 md:h-8 md:w-8 bg-white border-gray-200 text-gray-600 hover:bg-gray-50 hover:text-gray-900"
       >
         <span className="text-lg">-</span>
       </Button>
@@ -40,7 +40,7 @@ export function TreeControls({
         size="icon"
         onClick={onFitToScreen}
         title="适应屏幕"
-        className="h-10 w-10 md:h-8 md:w-8 bg-[#1F2937] border-[#374151] text-[#9CA3AF] hover:bg-[#374151] hover:text-white"
+        className="h-10 w-10 md:h-8 md:w-8 bg-white border-gray-200 text-gray-600 hover:bg-gray-50 hover:text-gray-900"
       >
         <span className="text-xs">FIT</span>
       </Button>
@@ -49,7 +49,7 @@ export function TreeControls({
         size="icon"
         onClick={onResetZoom}
         title="重置缩放"
-        className="h-10 w-10 md:h-8 md:w-8 bg-[#1F2937] border-[#374151] text-[#9CA3AF] hover:bg-[#374151] hover:text-white"
+        className="h-10 w-10 md:h-8 md:w-8 bg-white border-gray-200 text-gray-600 hover:bg-gray-50 hover:text-gray-900"
       >
         <span className="text-xs">1:1</span>
       </Button>

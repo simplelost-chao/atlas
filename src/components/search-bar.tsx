@@ -22,9 +22,9 @@ interface SearchBarProps {
 }
 
 const NODE_TYPE_OPTIONS = [
-  { value: "UPSTREAM", label: "上游", color: "bg-red-900/50 text-red-400 border-red-800", inactiveColor: "bg-[#1F2937] text-[#6B7280] border-[#374151]" },
-  { value: "MIDSTREAM", label: "中游", color: "bg-yellow-900/50 text-yellow-400 border-yellow-800", inactiveColor: "bg-[#1F2937] text-[#6B7280] border-[#374151]" },
-  { value: "DOWNSTREAM", label: "下游", color: "bg-green-900/50 text-green-400 border-green-800", inactiveColor: "bg-[#1F2937] text-[#6B7280] border-[#374151]" },
+  { value: "UPSTREAM", label: "上游", color: "bg-red-100 text-red-600 border-red-300", inactiveColor: "bg-white text-gray-500 border-gray-300" },
+  { value: "MIDSTREAM", label: "中游", color: "bg-yellow-100 text-yellow-700 border-yellow-300", inactiveColor: "bg-white text-gray-500 border-gray-300" },
+  { value: "DOWNSTREAM", label: "下游", color: "bg-green-100 text-green-700 border-green-300", inactiveColor: "bg-white text-gray-500 border-gray-300" },
 ];
 
 export function SearchBar({
@@ -49,11 +49,11 @@ export function SearchBar({
             setShowResults(true);
           }}
           onFocus={() => setShowResults(true)}
-          className="bg-[#1F2937] border-[#374151] text-white placeholder:text-[#4B5563] pr-8 shadow-sm"
+          className="bg-white border-gray-200 text-gray-900 placeholder:text-gray-400 pr-8 shadow-sm"
         />
         {query && (
           <button
-            className="absolute right-2 top-1/2 -translate-y-1/2 text-[#6B7280] hover:text-white"
+            className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700"
             onClick={() => {
               onClear();
               setShowResults(false);
@@ -83,11 +83,11 @@ export function SearchBar({
 
       {/* Search results dropdown */}
       {showResults && results.length > 0 && (
-        <div className="mt-1 max-h-64 overflow-y-auto rounded-md border border-[#374151] bg-[#1F2937] shadow-lg shadow-black/20">
+        <div className="mt-1 max-h-64 overflow-y-auto rounded-md border border-gray-200 bg-white shadow-lg shadow-black/10">
           {results.map((result, i) => (
             <button
               key={`${result.nodeId}-${i}`}
-              className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-[#374151] text-white"
+              className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-gray-50 text-gray-900"
               onClick={() => {
                 onResultClick(result.nodeId);
                 setShowResults(false);
@@ -95,14 +95,14 @@ export function SearchBar({
             >
               <span
                 className={`text-xs ${
-                  result.type === "company" ? "text-[#C59D5F]" : "text-[#6B7280]"
+                  result.type === "company" ? "text-[#C59D5F]" : "text-gray-400"
                 }`}
               >
                 {result.type === "company" ? "公司" : "环节"}
               </span>
               <span className="flex-1 truncate font-medium">{result.name}</span>
               {result.detail && (
-                <span className="text-xs text-[#6B7280]">{result.detail}</span>
+                <span className="text-xs text-gray-400">{result.detail}</span>
               )}
             </button>
           ))}

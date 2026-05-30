@@ -21,9 +21,9 @@ export function TreeLinkComponent({ link }: TreeLinkComponentProps) {
     <path
       d={path ?? ""}
       fill="none"
-      stroke="#374151"
+      stroke="#D1D5DB"
       strokeWidth={1.5}
-      strokeOpacity={0.6}
+      strokeOpacity={0.8}
       className="transition-all duration-300"
     />
   );
