@@ -123,4 +123,34 @@ export const teamRouter = createRouter({
       }
       return removeMember(input.teamId, input.userId);
     }),
+
+  invite: teamProcedure
+    .input(
+      z.object({
+        teamId: z.string(),
+        email: z.string().email(),
+        role: z.enum(["ADMIN", "EDITOR", "VIEWER"]),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      if (ctx.teamRole !== "OWNER" && ctx.teamRole !== "ADMIN") {
+        throw new TRPCError({ code: "FORBIDDEN" });
+      }
+      const { createInvite } = await import("../../services/invite");
+      return createInvite(input.teamId, input.email, input.role);
+    }),
+
+  pendingInvites: teamProcedure
+    .input(z.object({ teamId: z.string() }))
+    .query(async ({ input }) => {
+      const { listPendingInvites } = await import("../../services/invite");
+      return listPendingInvites(input.teamId);
+    }),
+
+  acceptInvite: protectedProcedure
+    .input(z.object({ token: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const { acceptInvite } = await import("../../services/invite");
+      return acceptInvite(input.token, ctx.userId);
+    }),
 });
