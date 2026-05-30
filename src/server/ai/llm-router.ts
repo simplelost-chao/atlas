@@ -55,8 +55,24 @@ export class LLMRouter {
 }
 
 export async function createRouterFromTeamKeys(teamId: string, db: any): Promise<LLMRouter> {
-  const apiKeys = await db.apiKey.findMany({ where: { teamId } });
   const providers: Partial<Record<LLMProviderName, LLMProvider>> = {};
+
+  // 1. Try environment variables first
+  if (process.env.ANTHROPIC_API_KEY) {
+    providers.anthropic = {
+      apiKey: process.env.ANTHROPIC_API_KEY,
+      model: process.env.ANTHROPIC_MODEL ?? "claude-sonnet-4-20250514",
+    };
+  }
+  if (process.env.OPENAI_API_KEY) {
+    providers.openai = {
+      apiKey: process.env.OPENAI_API_KEY,
+      model: process.env.OPENAI_MODEL ?? "gpt-4o",
+    };
+  }
+
+  // 2. Override/supplement with team DB keys
+  const apiKeys = await db.apiKey.findMany({ where: { teamId } });
   for (const key of apiKeys) {
     const providerName = key.provider as LLMProviderName;
     if (providerName === "openai" || providerName === "anthropic") {
@@ -66,7 +82,10 @@ export async function createRouterFromTeamKeys(teamId: string, db: any): Promise
       };
     }
   }
+
   const defaultProvider: LLMProviderName = providers.anthropic ? "anthropic" : "openai";
-  if (Object.keys(providers).length === 0) throw new Error("No API keys configured for this team");
+  if (Object.keys(providers).length === 0) {
+    throw new Error("No API keys configured. Set ANTHROPIC_API_KEY in .env.local or add keys in Settings.");
+  }
   return new LLMRouter({ defaultProvider, providers });
 }

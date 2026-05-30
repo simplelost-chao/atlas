@@ -10,25 +10,41 @@ const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
 async function main() {
-  const passwordHash = await bcrypt.hash("password123", 10);
+  // Create admin user
+  const adminHash = await bcrypt.hash("123984", 10);
+  const admin = await prisma.user.upsert({
+    where: { email: "admin@atlas.dev" },
+    update: { passwordHash: adminHash },
+    create: {
+      email: "admin@atlas.dev",
+      name: "Admin",
+      passwordHash: adminHash,
+    },
+  });
 
   // Create demo user
+  const demoHash = await bcrypt.hash("password123", 10);
   const user = await prisma.user.upsert({
     where: { email: "demo@atlas.dev" },
     update: {},
     create: {
       email: "demo@atlas.dev",
       name: "Demo User",
-      passwordHash,
+      passwordHash: demoHash,
     },
   });
 
-  // Create demo team
+  // Create admin team
   const team = await prisma.team.create({
     data: {
-      name: "Demo Team",
+      name: "Atlas Team",
       members: {
-        create: { userId: user.id, role: "OWNER" },
+        createMany: {
+          data: [
+            { userId: admin.id, role: "OWNER" },
+            { userId: user.id, role: "EDITOR" },
+          ],
+        },
       },
     },
   });
@@ -43,7 +59,9 @@ async function main() {
     },
   });
 
-  console.log("Seed complete: demo@atlas.dev / password123");
+  console.log("Seed complete:");
+  console.log("  Admin: admin@atlas.dev / 123984");
+  console.log("  Demo:  demo@atlas.dev / password123");
 }
 
 main()

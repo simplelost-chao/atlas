@@ -5,19 +5,41 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { trpc } from "@/lib/trpc";
+import { useTeam } from "@/hooks/use-team";
 
 export default function NewProjectPage() {
   const router = useRouter();
+  const { teamId } = useTeam();
   const [name, setName] = useState("");
   const [industry, setIndustry] = useState("");
   const [description, setDescription] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const createProject = trpc.project.create.useMutation({
+    onSuccess: (project) => {
+      router.push(`/app/projects/${project.id}`);
+    },
+    onError: (err) => {
+      setError(err.message);
+    },
+  });
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setLoading(true);
-    // TODO: Wire to trpc.project.create.useMutation()
-    router.push("/app/projects");
+    setError("");
+
+    if (!teamId) {
+      setError("未找到团队，请刷新页面重试");
+      return;
+    }
+
+    createProject.mutate({
+      teamId,
+      name,
+      industry,
+      description: description || undefined,
+    });
   }
 
   return (
@@ -28,6 +50,9 @@ export default function NewProjectPage() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
+            {error && (
+              <p className="text-sm text-red-600 text-center">{error}</p>
+            )}
             <div className="space-y-2">
               <label htmlFor="name" className="text-sm font-medium">
                 项目名称
@@ -72,8 +97,8 @@ export default function NewProjectPage() {
               >
                 取消
               </Button>
-              <Button type="submit" disabled={loading}>
-                {loading ? "创建中..." : "创建项目"}
+              <Button type="submit" disabled={createProject.isPending}>
+                {createProject.isPending ? "创建中..." : "创建项目"}
               </Button>
             </div>
           </form>

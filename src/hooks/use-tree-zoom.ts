@@ -88,6 +88,43 @@ export function useTreeZoom(options: UseTreeZoomOptions = {}) {
       );
   }, []);
 
+  /** Center view on a specific SVG coordinate at current scale */
+  const centerOnPoint = useCallback((x: number, y: number) => {
+    if (!svgRef.current || !zoomRef.current) return;
+    const svg = d3.select(svgRef.current);
+    const svgRect = svgRef.current.getBoundingClientRect();
+    const currentScale = transformRef.current.k;
+
+    const tx = svgRect.width / 2 - x * currentScale;
+    const ty = svgRect.height / 2 - y * currentScale;
+
+    svg
+      .transition()
+      .duration(400)
+      .call(
+        zoomRef.current.transform,
+        d3.zoomIdentity.translate(tx, ty).scale(currentScale)
+      );
+  }, []);
+
+  const centerAt1to1 = useCallback(() => {
+    if (!svgRef.current || !gRef.current || !zoomRef.current) return;
+    const svg = d3.select(svgRef.current);
+    const bounds = gRef.current.getBBox();
+    const svgRect = svgRef.current.getBoundingClientRect();
+
+    const tx = svgRect.width / 2 - (bounds.x + bounds.width / 2);
+    const ty = svgRect.height / 2 - (bounds.y + bounds.height / 2);
+
+    svg
+      .transition()
+      .duration(400)
+      .call(
+        zoomRef.current.transform,
+        d3.zoomIdentity.translate(tx, ty)
+      );
+  }, []);
+
   return {
     svgRef,
     gRef,
@@ -95,6 +132,8 @@ export function useTreeZoom(options: UseTreeZoomOptions = {}) {
     zoomOut,
     resetZoom,
     fitToScreen,
+    centerAt1to1,
+    centerOnPoint,
     transformRef,
   };
 }

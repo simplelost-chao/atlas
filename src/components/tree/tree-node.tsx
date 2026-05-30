@@ -7,6 +7,8 @@ interface TreeNodeComponentProps {
   node: HierarchyPointNode<TreeNode>;
   isSelected: boolean;
   isHighlighted: boolean;
+  /** Total children count (including collapsed) for showing badge */
+  collapsedChildCount?: number;
   onNodeClick: (node: HierarchyPointNode<TreeNode>) => void;
   onNodeToggle: (node: HierarchyPointNode<TreeNode>) => void;
   onNodeContextMenu?: (
@@ -22,23 +24,30 @@ const NODE_TYPE_COLORS: Record<string, string> = {
   DOWNSTREAM: "#22c55e",
 };
 
-const NODE_WIDTH = 180;
-const NODE_HEIGHT = 70;
+const NODE_TYPE_LABELS: Record<string, string> = {
+  UPSTREAM: "上游",
+  MIDSTREAM: "中游",
+  DOWNSTREAM: "下游",
+};
+
+const NODE_WIDTH = 200;
+const NODE_HEIGHT = 74;
 
 export function TreeNodeComponent({
   node,
   isSelected,
   isHighlighted,
+  collapsedChildCount,
   onNodeClick,
   onNodeToggle,
   onNodeContextMenu,
 }: TreeNodeComponentProps) {
   const { data } = node;
   const color = NODE_TYPE_COLORS[data.data.nodeType] ?? "#6b7280";
-  const hasChildren =
-    (node.data.children && node.data.children.length > 0) ||
-    (node.data as any)._children?.length > 0;
+  const isCollapsed = !!node.data._collapsed;
+  const hasChildren = isCollapsed || (node.children && node.children.length > 0);
   const companyCount = data.data.companies?.length ?? 0;
+  const typeLabel = NODE_TYPE_LABELS[data.data.nodeType];
 
   return (
     <g
@@ -47,10 +56,6 @@ export function TreeNodeComponent({
       onClick={(e) => {
         e.stopPropagation();
         onNodeClick(node);
-      }}
-      onDoubleClick={(e) => {
-        e.stopPropagation();
-        onNodeToggle(node);
       }}
       onContextMenu={(e) => {
         e.preventDefault();
@@ -83,71 +88,76 @@ export function TreeNodeComponent({
         fill={color}
       />
 
+      {/* Type label badge */}
+      {typeLabel && (
+        <g transform={`translate(${NODE_WIDTH / 2 - 28}, ${-NODE_HEIGHT / 2 + 12})`}>
+          <rect x={-14} y={-8} width={28} height={16} rx={4} fill={color} opacity={0.15} />
+          <text fontSize="9" fill={color} textAnchor="middle" dy="0.35em" fontWeight="600">
+            {typeLabel}
+          </text>
+        </g>
+      )}
+
       {/* Node name */}
       <text
-        dy="-0.3em"
+        dy="-0.2em"
         x={-NODE_WIDTH / 2 + 14}
         fontSize="13"
         fontWeight="600"
         fill="#1f2937"
         textAnchor="start"
       >
-        {data.name.length > 12 ? data.name.slice(0, 12) + "..." : data.name}
+        {data.name.length > 14 ? data.name.slice(0, 14) + "..." : data.name}
       </text>
 
       {/* Metrics row */}
       <text
-        dy="1.2em"
+        dy="1.4em"
         x={-NODE_WIDTH / 2 + 14}
         fontSize="10"
         fill="#6b7280"
         textAnchor="start"
       >
-        {data.data.profitMargin && `利润率: ${data.data.profitMargin}`}
+        {[
+          data.data.profitMargin && `利润率:${data.data.profitMargin}`,
+          companyCount > 0 && `${companyCount}家公司`,
+        ]
+          .filter(Boolean)
+          .join(" | ")}
         {!data.data.profitMargin &&
+          !companyCount &&
           data.data.marketSize &&
           `规模: ${data.data.marketSize}`}
       </text>
 
-      {/* Company count badge */}
-      {companyCount > 0 && (
-        <g transform={`translate(${NODE_WIDTH / 2 - 20}, ${-NODE_HEIGHT / 2 + 8})`}>
-          <circle r={10} fill={color} opacity={0.9} />
-          <text
-            fontSize="9"
-            fill="white"
-            textAnchor="middle"
-            dy="0.35em"
-            fontWeight="bold"
-          >
-            {companyCount}
-          </text>
-        </g>
-      )}
-
-      {/* Expand/collapse indicator */}
+      {/* Expand/collapse button */}
       {hasChildren && (
-        <g transform={`translate(${NODE_WIDTH / 2 + 12}, 0)`}>
-          <circle
-            r={9}
-            fill="white"
-            stroke={color}
-            strokeWidth={1.5}
-            className="cursor-pointer"
-            onClick={(e) => {
-              e.stopPropagation();
-              onNodeToggle(node);
-            }}
-          />
-          <text
-            fontSize="14"
-            fill={color}
-            textAnchor="middle"
-            dy="0.35em"
-            fontWeight="bold"
-          >
-            {node.data._collapsed ? "+" : "-"}
-          </text>
+        <g
+          transform={`translate(${NODE_WIDTH / 2 + 14}, 0)`}
+          className="cursor-pointer"
+          onClick={(e) => {
+            e.stopPropagation();
+            onNodeToggle(node);
+          }}
+        >
+          <circle r={12} fill="white" stroke={color} strokeWidth={1.5} />
+          {isCollapsed ? (
+            <>
+              <text fontSize="12" fill={color} textAnchor="middle" dy="0.35em" fontWeight="bold">
+                +
+              </text>
+              {/* Child count */}
+              {collapsedChildCount != null && collapsedChildCount > 0 && (
+                <text fontSize="8" fill={color} textAnchor="middle" dy="2.2em">
+                  {collapsedChildCount}
+                </text>
+              )}
+            </>
+          ) : (
+            <text fontSize="12" fill={color} textAnchor="middle" dy="0.35em" fontWeight="bold">
+              −
+            </text>
+          )}
         </g>
       )}
     </g>

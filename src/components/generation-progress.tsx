@@ -1,11 +1,22 @@
 "use client";
 
+import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface GenerationProgressProps {
   teamId: string;
   projectId: string;
+}
+
+interface LogEntry {
+  step: number;
+  stepName: string;
+  message: string;
+  costUSD?: number;
+  durationMs?: number;
+  detail?: string;
+  timestamp: string;
 }
 
 const statusLabels: Record<string, string> = {
@@ -29,37 +40,107 @@ export function GenerationProgress({
     }
   );
 
+  const [expanded, setExpanded] = useState(false);
+
   if (!data) return null;
 
+  const logs: LogEntry[] = (data as any).logs ?? [];
+  const totalCost = logs.reduce((sum, l) => sum + (l.costUSD ?? 0), 0);
+  const isActive = data.status === "GENERATING";
+  const isFailed = data.status === "FAILED";
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-sm font-medium">生成状态</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-2">
+    <Card className={isActive ? "border-yellow-300" : isFailed ? "border-red-300" : ""}>
+      <CardHeader className="pb-2 cursor-pointer" onClick={() => setExpanded(!expanded)}>
+        <CardTitle className="flex items-center justify-between text-sm font-medium">
           <div className="flex items-center gap-2">
-            {data.status === "GENERATING" && (
-              <div className="h-3 w-3 animate-pulse rounded-full bg-yellow-400" />
+            <span className="text-gray-400">{expanded ? "▼" : "▶"}</span>
+            <span>生成状态</span>
+          </div>
+          <div className="flex items-center gap-2">
+            {isActive && (
+              <div className="h-2.5 w-2.5 animate-pulse rounded-full bg-yellow-400" />
             )}
             {data.status === "COMPLETED" && (
-              <div className="h-3 w-3 rounded-full bg-green-500" />
+              <div className="h-2.5 w-2.5 rounded-full bg-green-500" />
             )}
-            {data.status === "FAILED" && (
-              <div className="h-3 w-3 rounded-full bg-red-500" />
+            {isFailed && (
+              <div className="h-2.5 w-2.5 rounded-full bg-red-500" />
             )}
-            {data.status === "PENDING" && (
-              <div className="h-3 w-3 rounded-full bg-gray-300" />
-            )}
-            <span className="text-sm">{statusLabels[data.status] ?? data.status}</span>
+            <span className="text-xs font-normal text-gray-500">
+              {statusLabels[data.status] ?? data.status}
+            </span>
           </div>
-          {(data.status === "GENERATING" || data.status === "COMPLETED") && (
-            <div className="text-xs text-gray-500">
-              环节: {data.nodeCount} 个 | 公司: {data.companyCount} 家
+        </CardTitle>
+      </CardHeader>
+      {expanded && <CardContent className="space-y-3">
+        {/* Stats */}
+        {(isActive || data.status === "COMPLETED") && (
+          <div className="flex gap-4 text-xs text-gray-500">
+            <span>环节: {data.nodeCount}</span>
+            <span>公司: {data.companyCount}</span>
+            {totalCost > 0 && <span>开销: ${totalCost.toFixed(4)}</span>}
+          </div>
+        )}
+
+        {/* Log entries */}
+        {logs.length > 0 && (
+          <div className="max-h-96 overflow-y-auto rounded bg-gray-50 p-2">
+            <div className="space-y-1">
+              {logs.map((log, i) => {
+                const isMultiLine = log.message.includes("\n");
+                const isResult = ["骨架结构", "发现公司", "投研分析", "利润链"].includes(log.stepName);
+                return (
+                  <div key={i} className={`text-xs ${isResult ? "border-l-2 border-blue-200 pl-2 py-1" : ""}`}>
+                    <div className="flex items-center gap-2">
+                      <span className="shrink-0 text-gray-400">
+                        {new Date(log.timestamp).toLocaleTimeString("zh-CN")}
+                      </span>
+                      <span
+                        className={`shrink-0 rounded px-1 ${
+                          log.step === -1
+                            ? "bg-red-100 text-red-700"
+                            : isResult
+                              ? "bg-indigo-100 text-indigo-700"
+                              : log.message.startsWith("完成")
+                                ? "bg-green-100 text-green-700"
+                                : "bg-blue-100 text-blue-700"
+                        }`}
+                      >
+                        {log.stepName}
+                      </span>
+                      {!isMultiLine && (
+                        <span className="flex-1 text-gray-700">{log.message}</span>
+                      )}
+                      {log.durationMs != null && log.durationMs > 0 && (
+                        <span className="shrink-0 text-gray-400">
+                          {(log.durationMs / 1000).toFixed(1)}s
+                        </span>
+                      )}
+                      {log.costUSD != null && log.costUSD > 0 && (
+                        <span className="shrink-0 text-gray-400">
+                          ${log.costUSD.toFixed(4)}
+                        </span>
+                      )}
+                    </div>
+                    {isMultiLine && (
+                      <pre className="mt-1 whitespace-pre-wrap text-gray-700 leading-relaxed">
+                        {log.message}
+                      </pre>
+                    )}
+                  </div>
+                );
+              })}
+              {isActive && (
+                <div className="flex items-center gap-2 text-xs text-gray-400">
+                  <span className="animate-pulse">●</span>
+                  <span>处理中...</span>
+                </div>
+              )}
             </div>
-          )}
-        </div>
-      </CardContent>
+          </div>
+        )}
+      </CardContent>}
     </Card>
   );
 }

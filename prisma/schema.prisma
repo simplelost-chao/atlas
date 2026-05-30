@@ -140,6 +140,7 @@ model IndustryChain {
   projectId String      @unique
   status    ChainStatus @default(PENDING)
   maxDepth  Int         @default(4)
+  logs      Json[]      @default([])
   createdAt DateTime    @default(now())
   updatedAt DateTime    @updatedAt
 

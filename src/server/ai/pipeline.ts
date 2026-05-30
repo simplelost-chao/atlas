@@ -2,6 +2,7 @@ import { generateObject } from "ai";
 import type { PrismaClient } from "@prisma/client";
 import type { ChainNode, Company } from "@prisma/client";
 import { LLMRouter } from "./llm-router";
+import { generateObjectViaCLI } from "./claude-cli";
 import {
   ChainSkeletonSchema,
   NodeExpansionSchema,
@@ -24,7 +25,63 @@ export interface PipelineContext {
   chainId: string;
   industry: string;
   maxDepth: number;
+  useCLI?: boolean;
   onProgress?: (step: number, message: string) => void;
+}
+
+/** Append a log entry to the chain's logs array in DB */
+async function appendLog(
+  ctx: PipelineContext,
+  log: { step: number; stepName: string; message: string; costUSD?: number; durationMs?: number; detail?: string }
+) {
+  const entry = { ...log, timestamp: new Date().toISOString() };
+  console.log(`[Pipeline] Step ${log.step} (${log.stepName}): ${log.message}`);
+  try {
+    await ctx.db.$executeRawUnsafe(
+      `UPDATE "IndustryChain" SET "logs" = "logs" || $1::jsonb, "updatedAt" = NOW() WHERE "id" = $2`,
+      JSON.stringify(entry),
+      ctx.chainId
+    );
+  } catch (e) {
+    console.error("[Pipeline] Failed to append log:", e);
+  }
+}
+
+/** Unified generate function: uses Claude CLI or Vercel AI SDK */
+async function generate<T extends import("zod").ZodType>(
+  ctx: PipelineContext,
+  step: import("./llm-router").PipelineStep,
+  stepNum: number,
+  stepName: string,
+  opts: { system?: string; prompt: string; schema: T },
+  detail?: string
+): Promise<{ object: import("zod").infer<T> }> {
+  const startTime = Date.now();
+  await appendLog(ctx, { step: stepNum, stepName, message: `开始: ${detail ?? stepName}...` });
+
+  let result: any;
+  if (ctx.useCLI) {
+    result = await generateObjectViaCLI(opts);
+  } else {
+    result = await generateObject({
+      model: ctx.router.getModelForStep(step),
+      system: opts.system,
+      prompt: opts.prompt,
+      schema: opts.schema,
+    });
+  }
+
+  const elapsed = Date.now() - startTime;
+  await appendLog(ctx, {
+    step: stepNum,
+    stepName,
+    message: `完成: ${detail ?? stepName}`,
+    costUSD: result.costUSD,
+    durationMs: elapsed,
+    detail,
+  });
+
+  return result;
 }
 
 /** Concurrency limiter for parallel LLM calls. */
@@ -33,30 +90,27 @@ async function parallelWithLimit<T, R>(
   limit: number,
   fn: (item: T) => Promise<R>
 ): Promise<R[]> {
-  const results: R[] = [];
-  const executing: Promise<void>[] = [];
-
-  for (const item of items) {
-    const p = fn(item).then((result) => {
-      results.push(result);
-    });
-    executing.push(p);
-
-    if (executing.length >= limit) {
-      await Promise.race(executing);
-      // Remove resolved promises
-      for (let i = executing.length - 1; i >= 0; i--) {
-        // Check if settled by trying to race with an already-resolved promise
-        const settled = await Promise.race([
-          executing[i].then(() => true),
-          Promise.resolve(false),
-        ]);
-        if (settled) executing.splice(i, 1);
-      }
+  // Sequential mode
+  if (limit <= 1) {
+    const results: R[] = [];
+    for (const item of items) {
+      results.push(await fn(item));
     }
+    return results;
   }
 
-  await Promise.all(executing);
+  // Parallel with concurrency limit
+  const results: R[] = [];
+  let i = 0;
+  async function runNext(): Promise<void> {
+    while (i < items.length) {
+      const idx = i++;
+      const result = await fn(items[idx]);
+      results.push(result);
+    }
+  }
+  const workers = Array.from({ length: Math.min(limit, items.length) }, () => runNext());
+  await Promise.all(workers);
   return results;
 }
 
@@ -67,12 +121,11 @@ export async function runSkeletonStep(
 ): Promise<ChainNode[]> {
   ctx.onProgress?.(1, "正在生成产业链骨架...");
 
-  const { object } = await generateObject({
-    model: ctx.router.getModelForStep("skeleton"),
+  const { object } = await generate(ctx, "skeleton", 1, "骨架生成", {
     system: getSystemPrompt(),
     prompt: skeletonPrompt(ctx.industry),
     schema: ChainSkeletonSchema,
-  });
+  }, `生成 ${ctx.industry} 产业链骨架`);
 
   const nodes: ChainNode[] = [];
   for (const nodeData of object.nodes) {
@@ -88,6 +141,13 @@ export async function runSkeletonStep(
     });
     nodes.push(node);
   }
+
+  // Log skeleton structure
+  const nodeList = nodes.map(n => `  ${n.nodeType === 'UPSTREAM' ? '🔴' : n.nodeType === 'DOWNSTREAM' ? '🟢' : '🟡'} ${n.name}`).join('\n');
+  await appendLog(ctx, {
+    step: 1, stepName: "骨架结构",
+    message: `产业链骨架 ${nodes.length} 个环节:\n${nodeList}`,
+  });
 
   ctx.onProgress?.(1, `骨架生成完成，共 ${nodes.length} 个一级环节`);
   return nodes;
@@ -108,8 +168,7 @@ export async function runNodeExpansionStep(
     `正在拆解环节: ${parentNode.name} (层级 ${parentNode.level})...`
   );
 
-  const { object } = await generateObject({
-    model: ctx.router.getModelForStep("nodeExpansion"),
+  const { object } = await generate(ctx, "nodeExpansion", 2, "环节细化", {
     system: getSystemPrompt(),
     prompt: nodeExpansionPrompt(
       ctx.industry,
@@ -118,7 +177,7 @@ export async function runNodeExpansionStep(
       parentNode.level + 1
     ),
     schema: NodeExpansionSchema,
-  });
+  }, `拆解「${parentNode.name}」`);
 
   const children: ChainNode[] = [];
   for (const subNode of object.subNodes) {
@@ -155,8 +214,8 @@ async function expandAllNodes(
 
   const allChildren: ChainNode[] = [];
 
-  // Expand nodes in parallel with concurrency limit
-  await parallelWithLimit(nodes, 3, async (node) => {
+  // Expand nodes (sequential in CLI mode, parallel otherwise)
+  await parallelWithLimit(nodes, ctx.useCLI ? 1 : 3, async (node) => {
     const children = await runNodeExpansionStep(ctx, node);
     allChildren.push(...children);
   });
@@ -173,12 +232,11 @@ export async function runCompanyDiscoveryStep(
 ): Promise<Company[]> {
   ctx.onProgress?.(3, `正在挖掘公司: ${node.name}...`);
 
-  const { object } = await generateObject({
-    model: ctx.router.getModelForStep("companyDiscovery"),
+  const { object } = await generate(ctx, "companyDiscovery", 3, "公司挖掘", {
     system: getSystemPrompt(),
     prompt: companyDiscoveryPrompt(ctx.industry, node.name, node.description),
     schema: CompanyDiscoverySchema,
-  });
+  }, `挖掘「${node.name}」环节公司`);
 
   const companies: Company[] = [];
   for (const companyData of object.companies) {
@@ -199,6 +257,19 @@ export async function runCompanyDiscoveryStep(
     companies.push(company);
   }
 
+  // Log discovered companies
+  const posLabel: Record<string, string> = { LEADER: '龙头', CHALLENGER: '挑战者', EMERGING: '新兴', NICHE: '细分' };
+  const companyList = companies.map(c => {
+    const tag = posLabel[c.marketPosition] ?? c.marketPosition;
+    const ticker = c.ticker ? ` (${c.ticker})` : '';
+    const share = c.marketShare ? ` 份额${c.marketShare}` : '';
+    return `  [${tag}] ${c.name}${ticker}${share}`;
+  }).join('\n');
+  await appendLog(ctx, {
+    step: 3, stepName: "发现公司",
+    message: `「${node.name}」发现 ${companies.length} 家公司:\n${companyList}`,
+  });
+
   return companies;
 }
 
@@ -211,12 +282,11 @@ export async function runDeepAnalysisStep(
 ): Promise<void> {
   ctx.onProgress?.(4, `正在深度分析: ${company.name}...`);
 
-  const { object } = await generateObject({
-    model: ctx.router.getModelForStep("deepAnalysis"),
+  const { object } = await generate(ctx, "deepAnalysis", 4, "深度分析", {
     system: getSystemPrompt(),
     prompt: deepAnalysisPrompt(company.name, ctx.industry, nodeName),
     schema: DeepAnalysisSchema,
-  });
+  }, `深度分析「${company.name}」`);
 
   await ctx.db.company.update({
     where: { id: company.id },
@@ -235,6 +305,24 @@ export async function runDeepAnalysisStep(
       analystRating: object.investment.analystRating,
       customerConcentration: object.investment.customerConcentration,
     },
+  });
+
+  // Log deep analysis results
+  const f = object.financials;
+  const inv = object.investment;
+  const lines = [
+    `  📊 ${company.name} (${nodeName})`,
+    f.marketCap ? `  市值: ${f.marketCap}` : null,
+    f.revenue ? `  营收: ${f.revenue}${f.revenueGrowth ? ` (增速${f.revenueGrowth})` : ''}` : null,
+    f.grossMargin ? `  毛利率: ${f.grossMargin} | 净利率: ${f.netMargin ?? '-'}` : null,
+    object.competitive.moat ? `  护城河: ${object.competitive.moat.slice(0, 60)}` : null,
+    inv.analystRating ? `  评级: ${inv.analystRating}` : null,
+    inv.highlights?.length ? `  亮点: ${inv.highlights.slice(0, 2).join('；')}` : null,
+    inv.risks?.length ? `  风险: ${inv.risks.slice(0, 2).join('；')}` : null,
+  ].filter(Boolean).join('\n');
+  await appendLog(ctx, {
+    step: 4, stepName: "投研分析",
+    message: lines,
   });
 }
 
@@ -256,12 +344,11 @@ export async function runProfitChainStep(
     nodeType: n.nodeType,
   }));
 
-  const { object } = await generateObject({
-    model: ctx.router.getModelForStep("profitChain"),
+  const { object } = await generate(ctx, "profitChain", 5, "利润链分析", {
     system: getSystemPrompt(),
     prompt: profitChainPrompt(ctx.industry, nodeInfos),
     schema: ProfitChainSchema,
-  });
+  }, `分析 ${ctx.industry} 产业利润链`);
 
   // Update nodes with profit chain analysis
   for (const analysis of object.nodeAnalyses) {
@@ -276,17 +363,30 @@ export async function runProfitChainStep(
       });
     }
   }
+
+  // Log profit chain summary
+  const concLabel: Record<string, string> = { HIGH: '高', MEDIUM: '中', LOW: '低' };
+  const profitLines = object.nodeAnalyses.map(a =>
+    `  ${a.nodeName}: 利润率 ${a.profitMargin} (集中度:${concLabel[a.profitConcentration] ?? a.profitConcentration})`
+  ).join('\n');
+  await appendLog(ctx, {
+    step: 5, stepName: "利润链",
+    message: `${object.summary}\n${profitLines}\n\n${object.profitFlowDescription}`,
+  });
 }
 
 // ─── Full Pipeline ────────────────────────────────
 
 export async function runFullPipeline(ctx: PipelineContext): Promise<void> {
+  const pipelineStart = Date.now();
   try {
-    // Update status to GENERATING
+    // Update status to GENERATING, clear old logs
     await ctx.db.industryChain.update({
       where: { id: ctx.chainId },
-      data: { status: "GENERATING" },
+      data: { status: "GENERATING", logs: [] },
     });
+
+    await appendLog(ctx, { step: 0, stepName: "初始化", message: `开始生成「${ctx.industry}」产业链，最大深度 ${ctx.maxDepth}` });
 
     // Step 1: Generate skeleton
     const rootNodes = await runSkeletonStep(ctx);
@@ -294,34 +394,43 @@ export async function runFullPipeline(ctx: PipelineContext): Promise<void> {
     // Step 2: Expand all nodes recursively
     await expandAllNodes(ctx, rootNodes);
 
-    // Step 3: Discover companies for leaf nodes
+    // Step 3: Discover companies for ALL nodes (not just leaves)
     const allNodes = await ctx.db.chainNode.findMany({
       where: { chainId: ctx.chainId },
-      include: { children: { select: { id: true } } },
     });
-    const leafNodes = allNodes.filter((n) => n.children.length === 0);
+
+    await appendLog(ctx, { step: 3, stepName: "公司挖掘", message: `开始挖掘 ${allNodes.length} 个环节的公司...` });
 
     const allCompanies: Array<{ company: Company; nodeName: string }> = [];
-    await parallelWithLimit(leafNodes, 3, async (node) => {
+    await parallelWithLimit(allNodes, ctx.useCLI ? 1 : 3, async (node) => {
       const companies = await runCompanyDiscoveryStep(ctx, node);
       for (const c of companies) {
         allCompanies.push({ company: c, nodeName: node.name });
       }
     });
 
-    // Step 4: Deep analysis for LEADER and CHALLENGER companies
-    const priorityCompanies = allCompanies.filter(
-      ({ company }) =>
-        company.marketPosition === "LEADER" ||
-        company.marketPosition === "CHALLENGER"
-    );
+    await appendLog(ctx, { step: 3, stepName: "公司挖掘", message: `共发现 ${allCompanies.length} 家公司` });
 
-    await parallelWithLimit(priorityCompanies, 2, async ({ company, nodeName }) => {
+    // Step 4: Deep analysis for LEADER and CHALLENGER companies (max 10)
+    const priorityCompanies = allCompanies
+      .filter(
+        ({ company }) =>
+          company.marketPosition === "LEADER" ||
+          company.marketPosition === "CHALLENGER"
+      )
+      .slice(0, 10);
+
+    await appendLog(ctx, { step: 4, stepName: "深度分析", message: `对 ${priorityCompanies.length} 家重点公司进行投研分析...` });
+
+    await parallelWithLimit(priorityCompanies, ctx.useCLI ? 1 : 2, async ({ company, nodeName }) => {
       await runDeepAnalysisStep(ctx, company, nodeName);
     });
 
     // Step 5: Profit chain analysis
     await runProfitChainStep(ctx);
+
+    const totalTime = ((Date.now() - pipelineStart) / 1000).toFixed(1);
+    await appendLog(ctx, { step: 5, stepName: "完成", message: `产业链生成完成！总耗时 ${totalTime}s` });
 
     // Update status to COMPLETED
     await ctx.db.industryChain.update({
@@ -330,7 +439,9 @@ export async function runFullPipeline(ctx: PipelineContext): Promise<void> {
     });
 
     ctx.onProgress?.(5, "产业链生成完成！");
-  } catch (error) {
+  } catch (error: any) {
+    await appendLog(ctx, { step: -1, stepName: "错误", message: `生成失败: ${error.message}` });
+
     // Update status to FAILED
     await ctx.db.industryChain.update({
       where: { id: ctx.chainId },

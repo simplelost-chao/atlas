@@ -24,8 +24,8 @@ interface IndustryTreeProps {
   onNodeSelect?: (nodeId: string, companies: Company[]) => void;
 }
 
-const NODE_SPACING_X = 250; // horizontal spacing between levels
-const NODE_SPACING_Y = 90; // vertical spacing between siblings
+const NODE_SPACING_X = 280; // horizontal spacing between levels
+const NODE_SPACING_Y = 85; // vertical spacing between siblings
 
 export function IndustryTree({
   nodes,
@@ -34,16 +34,30 @@ export function IndustryTree({
   highlightedNodeIds = new Set(),
   onNodeSelect,
 }: IndustryTreeProps) {
-  const { svgRef, gRef, zoomIn, zoomOut, resetZoom, fitToScreen } =
+  const { svgRef, gRef, zoomIn, zoomOut, resetZoom, fitToScreen, centerAt1to1, centerOnPoint } =
     useTreeZoom();
 
-  const [collapsedIds, setCollapsedIds] = useState<Set<string>>(new Set());
+  // Track which node was just toggled, to focus on it
+  const [focusNodeId, setFocusNodeId] = useState<string | null>(null);
 
   // Build the tree hierarchy
   const rootData = useMemo(
     () => chainNodesToHierarchy(nodes, industryName),
     [nodes, industryName]
   );
+
+  // Default: collapse all nodes at level >= 1 (only show root + first-level)
+  const [collapsedIds, setCollapsedIds] = useState<Set<string>>(() => {
+    const ids = new Set<string>();
+    for (const node of nodes) {
+      if (node.level >= 1) {
+        // Check if this node has children
+        const hasChildren = nodes.some((n: any) => n.parentId === node.id);
+        if (hasChildren) ids.add(node.id);
+      }
+    }
+    return ids;
+  });
 
   // Apply collapse state
   const visibleRoot = useMemo(() => {
@@ -75,18 +89,36 @@ export function IndustryTree({
     };
   }, [visibleRoot]);
 
-  // Auto-fit on initial render
+  // On initial render, center at 1:1
   useEffect(() => {
-    const timer = setTimeout(fitToScreen, 100);
+    const timer = setTimeout(centerAt1to1, 150);
     return () => clearTimeout(timer);
-  }, [fitToScreen]);
+    // Only on mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // After collapse/expand, focus on the toggled node
+  useEffect(() => {
+    if (!focusNodeId) return;
+    const timer = setTimeout(() => {
+      const targetNode = layoutNodes.find((n) => n.data.data.id === focusNodeId);
+      if (targetNode) {
+        // In D3 tree layout, node.y = horizontal position, node.x = vertical position
+        centerOnPoint(targetNode.y, targetNode.x);
+      }
+      setFocusNodeId(null);
+    }, 200);
+    return () => clearTimeout(timer);
+  }, [focusNodeId, layoutNodes, centerOnPoint]);
 
   const handleNodeClick = useCallback(
     (node: HierarchyPointNode<TreeNode>) => {
       const nodeData = node.data;
       onNodeSelect?.(nodeData.data.id, nodeData.data.companies ?? []);
+      // Center on clicked node
+      centerOnPoint(node.y, node.x);
     },
-    [onNodeSelect]
+    [onNodeSelect, centerOnPoint]
   );
 
   const handleNodeToggle = useCallback(
@@ -101,6 +133,8 @@ export function IndustryTree({
         }
         return next;
       });
+      // Focus on this node after layout recalculates
+      setFocusNodeId(nodeId);
     },
     []
   );
@@ -125,16 +159,23 @@ export function IndustryTree({
           ))}
 
           {/* Nodes */}
-          {layoutNodes.map((node) => (
-            <TreeNodeComponent
-              key={node.data.data.id}
-              node={node}
-              isSelected={selectedNodeId === node.data.data.id}
-              isHighlighted={highlightedNodeIds.has(node.data.data.id)}
-              onNodeClick={handleNodeClick}
-              onNodeToggle={handleNodeToggle}
-            />
-          ))}
+          {layoutNodes.map((node) => {
+            // Count how many direct children this node has (for collapsed badge)
+            const childCount = collapsedIds.has(node.data.data.id)
+              ? nodes.filter((n: any) => n.parentId === node.data.data.id).length
+              : undefined;
+            return (
+              <TreeNodeComponent
+                key={node.data.data.id}
+                node={node}
+                isSelected={selectedNodeId === node.data.data.id}
+                isHighlighted={highlightedNodeIds.has(node.data.data.id)}
+                collapsedChildCount={childCount}
+                onNodeClick={handleNodeClick}
+                onNodeToggle={handleNodeToggle}
+              />
+            );
+          })}
         </g>
       </svg>
 

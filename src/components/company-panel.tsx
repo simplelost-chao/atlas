@@ -26,7 +26,7 @@ export function CompanyPanel({ company, onClose }: CompanyPanelProps) {
   if (!company) return null;
 
   return (
-    <div className="w-96 overflow-y-auto border-l border-gray-200 bg-white p-6">
+    <div className="bg-white">
       {/* Header */}
       <div className="mb-4 flex items-start justify-between">
         <div>
