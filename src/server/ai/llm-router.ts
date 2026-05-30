@@ -1,6 +1,6 @@
 import { createOpenAI } from "@ai-sdk/openai";
 import { createAnthropic } from "@ai-sdk/anthropic";
-import type { LanguageModelV1 } from "ai";
+import type { LanguageModel } from "ai";
 
 export type LLMProviderName = "openai" | "anthropic";
 export type PipelineStep = "skeleton" | "nodeExpansion" | "companyDiscovery" | "deepAnalysis" | "profitChain";
@@ -17,7 +17,7 @@ export interface LLMRouterConfig {
   stepProviderMap?: Partial<Record<PipelineStep, LLMProviderName>>;
 }
 
-const providerFactories: Record<LLMProviderName, (config: LLMProvider) => (modelId: string) => LanguageModelV1> = {
+const providerFactories: Record<LLMProviderName, (config: LLMProvider) => (modelId: string) => LanguageModel> = {
   openai: (config) => {
     const provider = createOpenAI({ apiKey: config.apiKey, ...(config.baseURL ? { baseURL: config.baseURL } : {}) });
     return (modelId: string) => provider(modelId);
@@ -30,13 +30,13 @@ const providerFactories: Record<LLMProviderName, (config: LLMProvider) => (model
 
 export class LLMRouter {
   private config: LLMRouterConfig;
-  private modelCache: Map<string, LanguageModelV1> = new Map();
+  private modelCache: Map<string, LanguageModel> = new Map();
 
   constructor(config: LLMRouterConfig) { this.config = config; }
 
   getDefaultProvider(): LLMProviderName { return this.config.defaultProvider; }
 
-  getModel(providerName?: LLMProviderName): LanguageModelV1 {
+  getModel(providerName?: LLMProviderName): LanguageModel {
     const name = providerName ?? this.config.defaultProvider;
     const providerConfig = this.config.providers[name];
     if (!providerConfig) throw new Error(`Provider '${name}' is not configured`);
@@ -48,7 +48,7 @@ export class LLMRouter {
     return model;
   }
 
-  getModelForStep(step: PipelineStep): LanguageModelV1 {
+  getModelForStep(step: PipelineStep): LanguageModel {
     const providerName = this.config.stepProviderMap?.[step];
     return this.getModel(providerName);
   }
