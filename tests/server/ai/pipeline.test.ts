@@ -12,6 +12,7 @@ import {
   runSkeletonStep,
   runNodeExpansionStep,
   runCompanyDiscoveryStep,
+  runFullPipeline,
   type PipelineContext,
 } from "@/server/ai/pipeline";
 import { LLMRouter } from "@/server/ai/llm-router";
@@ -27,6 +28,7 @@ describe("Generation Pipeline", () => {
   let context: PipelineContext;
 
   beforeEach(async () => {
+    vi.clearAllMocks();
     const user = await createTestUser();
     const team = await createTestTeam(user.id);
     const project = await createTestProject(team.id, {
@@ -154,6 +156,170 @@ describe("Generation Pipeline", () => {
       expect(dbChildren[0].name).toBe("GPU芯片");
       expect(dbChildren[0].level).toBe(1);
       expect(dbChildren[0].profitMargin).toBe("65%");
+    });
+  });
+
+  describe("Full Pipeline (integration)", () => {
+    it("runs all 5 steps and updates chain status to COMPLETED", async () => {
+      const mockGenerateObject = vi.mocked(generateObject);
+
+      // Step 1: Skeleton
+      mockGenerateObject.mockResolvedValueOnce({
+        object: {
+          industryName: "AI",
+          overview: "AI产业链",
+          nodes: [
+            { name: "应用层", description: "AI应用", nodeType: "DOWNSTREAM", order: 0 },
+            { name: "算力层", description: "GPU等", nodeType: "UPSTREAM", order: 1 },
+          ],
+        },
+        usage: { totalTokens: 500 },
+      } as any);
+
+      // Step 2: Node expansion for "应用层"
+      mockGenerateObject.mockResolvedValueOnce({
+        object: {
+          parentNodeName: "应用层",
+          subNodes: [
+            {
+              name: "企业AI",
+              description: "B端AI应用",
+              nodeType: "DOWNSTREAM",
+              order: 0,
+              keyDrivers: ["效率提升"],
+            },
+          ],
+        },
+        usage: { totalTokens: 300 },
+      } as any);
+
+      // Step 2: Node expansion for "算力层"
+      mockGenerateObject.mockResolvedValueOnce({
+        object: {
+          parentNodeName: "算力层",
+          subNodes: [
+            {
+              name: "GPU",
+              description: "图形处理器",
+              nodeType: "UPSTREAM",
+              order: 0,
+              keyDrivers: ["AI训练"],
+            },
+          ],
+        },
+        usage: { totalTokens: 300 },
+      } as any);
+
+      // Step 3: Company discovery for "企业AI"
+      mockGenerateObject.mockResolvedValueOnce({
+        object: {
+          nodeName: "企业AI",
+          companies: [
+            {
+              name: "Salesforce",
+              isPublic: true,
+              mainBusiness: "CRM+AI",
+              coreProducts: ["Einstein"],
+              marketPosition: "LEADER",
+            },
+          ],
+        },
+        usage: { totalTokens: 200 },
+      } as any);
+
+      // Step 3: Company discovery for "GPU"
+      mockGenerateObject.mockResolvedValueOnce({
+        object: {
+          nodeName: "GPU",
+          companies: [
+            {
+              name: "NVIDIA",
+              ticker: "NVDA",
+              isPublic: true,
+              mainBusiness: "GPU",
+              coreProducts: ["H100"],
+              marketPosition: "LEADER",
+            },
+          ],
+        },
+        usage: { totalTokens: 200 },
+      } as any);
+
+      // Step 4: Deep analysis for Salesforce (LEADER)
+      mockGenerateObject.mockResolvedValueOnce({
+        object: {
+          companyName: "Salesforce",
+          financials: { revenue: "300亿美元" },
+          competitive: { moat: "CRM生态", competitors: ["Microsoft"] },
+          investment: {
+            highlights: ["AI整合领先"],
+            risks: ["竞争激烈"],
+            analystRating: "持有",
+          },
+        },
+        usage: { totalTokens: 400 },
+      } as any);
+
+      // Step 4: Deep analysis for NVIDIA (LEADER)
+      mockGenerateObject.mockResolvedValueOnce({
+        object: {
+          companyName: "NVIDIA",
+          financials: { revenue: "609亿美元" },
+          competitive: { moat: "CUDA生态", competitors: ["AMD"] },
+          investment: {
+            highlights: ["AI龙头"],
+            risks: ["估值高"],
+            analystRating: "买入",
+          },
+        },
+        usage: { totalTokens: 400 },
+      } as any);
+
+      // Step 5: Profit chain
+      mockGenerateObject.mockResolvedValueOnce({
+        object: {
+          summary: "利润集中在上游芯片",
+          nodeAnalyses: [
+            {
+              nodeName: "GPU",
+              profitMargin: "65%",
+              valueFlow: "提供算力",
+              profitConcentration: "HIGH",
+              reason: "技术壁垒高",
+            },
+            {
+              nodeName: "企业AI",
+              profitMargin: "20%",
+              valueFlow: "交付应用价值",
+              profitConcentration: "MEDIUM",
+              reason: "竞争激烈",
+            },
+          ],
+          profitFlowDescription: "利润向上游集中",
+        },
+        usage: { totalTokens: 300 },
+      } as any);
+
+      // Run full pipeline with maxDepth=2 so expansion stops after one level
+      await runFullPipeline({ ...context, maxDepth: 2 });
+
+      // Verify chain status
+      const chain = await db.industryChain.findUnique({
+        where: { id: context.chainId },
+      });
+      expect(chain!.status).toBe("COMPLETED");
+
+      // Verify nodes created
+      const nodes = await db.chainNode.findMany({
+        where: { chainId: context.chainId },
+      });
+      expect(nodes.length).toBeGreaterThanOrEqual(4); // 2 root + 2 children
+
+      // Verify companies created
+      const companies = await db.company.findMany({
+        where: { chainNode: { chainId: context.chainId } },
+      });
+      expect(companies.length).toBeGreaterThanOrEqual(2);
     });
   });
 
