@@ -3,12 +3,14 @@ import { authRouter } from "./routers/auth";
 import { teamRouter } from "./routers/team";
 import { projectRouter } from "./routers/project";
 import { generationRouter } from "./routers/generation";
+import { commentRouter } from "./routers/comment";
 
 export const appRouter = createRouter({
   auth: authRouter,
   team: teamRouter,
   project: projectRouter,
   generation: generationRouter,
+  comment: commentRouter,
 });
 
 export type AppRouter = typeof appRouter;
