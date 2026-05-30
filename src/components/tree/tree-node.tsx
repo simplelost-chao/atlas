@@ -18,7 +18,7 @@ interface TreeNodeComponentProps {
 }
 
 const NODE_TYPE_COLORS: Record<string, string> = {
-  ROOT: "#6366f1",
+  ROOT: "#C59D5F",
   UPSTREAM: "#ef4444",
   MIDSTREAM: "#f59e0b",
   DOWNSTREAM: "#22c55e",
@@ -71,8 +71,8 @@ export function TreeNodeComponent({
         height={NODE_HEIGHT}
         rx={8}
         ry={8}
-        fill="white"
-        stroke={isSelected ? "#3b82f6" : isHighlighted ? "#fbbf24" : color}
+        fill="#1F2937"
+        stroke={isSelected ? "#C59D5F" : isHighlighted ? "#fbbf24" : color}
         strokeWidth={isSelected ? 2.5 : 1.5}
         className="transition-all duration-200"
         filter={isSelected ? "url(#shadow)" : undefined}
@@ -91,7 +91,7 @@ export function TreeNodeComponent({
       {/* Type label badge */}
       {typeLabel && (
         <g transform={`translate(${NODE_WIDTH / 2 - 28}, ${-NODE_HEIGHT / 2 + 12})`}>
-          <rect x={-14} y={-8} width={28} height={16} rx={4} fill={color} opacity={0.15} />
+          <rect x={-14} y={-8} width={28} height={16} rx={4} fill={color} opacity={0.2} />
           <text fontSize="9" fill={color} textAnchor="middle" dy="0.35em" fontWeight="600">
             {typeLabel}
           </text>
@@ -104,7 +104,7 @@ export function TreeNodeComponent({
         x={-NODE_WIDTH / 2 + 14}
         fontSize="13"
         fontWeight="600"
-        fill="#1f2937"
+        fill="#F9FAFB"
         textAnchor="start"
       >
         {data.name.length > 14 ? data.name.slice(0, 14) + "..." : data.name}
@@ -115,7 +115,7 @@ export function TreeNodeComponent({
         dy="1.4em"
         x={-NODE_WIDTH / 2 + 14}
         fontSize="10"
-        fill="#6b7280"
+        fill="#9CA3AF"
         textAnchor="start"
       >
         {[
@@ -140,7 +140,7 @@ export function TreeNodeComponent({
             onNodeToggle(node);
           }}
         >
-          <circle r={12} fill="white" stroke={color} strokeWidth={1.5} />
+          <circle r={12} fill="#374151" stroke={color} strokeWidth={1.5} />
           {isCollapsed ? (
             <>
               <text fontSize="12" fill={color} textAnchor="middle" dy="0.35em" fontWeight="bold">

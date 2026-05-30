@@ -140,7 +140,7 @@ export function IndustryTree({
   );
 
   return (
-    <div className="relative h-full w-full overflow-hidden rounded-lg border border-gray-200 bg-gray-50">
+    <div className="relative h-full w-full overflow-hidden rounded-lg border border-[#1F2937] bg-[#0D1117]">
       <svg ref={svgRef} className="h-full w-full touch-none">
         <defs>
           <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
@@ -148,7 +148,7 @@ export function IndustryTree({
               dx="0"
               dy="2"
               stdDeviation="3"
-              floodOpacity="0.15"
+              floodOpacity="0.3"
             />
           </filter>
         </defs>

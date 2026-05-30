@@ -19,10 +19,10 @@ const POSITION_LABELS: Record<string, string> = {
   NICHE: "细分",
 };
 const POSITION_COLORS: Record<string, string> = {
-  LEADER: "bg-green-100 text-green-800 border-green-200",
-  CHALLENGER: "bg-blue-100 text-blue-800 border-blue-200",
-  EMERGING: "bg-yellow-100 text-yellow-800 border-yellow-200",
-  NICHE: "bg-gray-100 text-gray-700 border-gray-200",
+  LEADER: "bg-green-900/50 text-green-400 border-green-800",
+  CHALLENGER: "bg-blue-900/50 text-blue-400 border-blue-800",
+  EMERGING: "bg-yellow-900/50 text-yellow-400 border-yellow-800",
+  NICHE: "bg-[#374151] text-[#9CA3AF] border-[#4B5563]",
 };
 
 export default function ProjectPage({
@@ -158,8 +158,8 @@ export default function ProjectPage({
   return (
     <div className="flex min-h-full flex-col">
       {/* Top bar */}
-      <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-b border-gray-200 px-4 py-3">
-        <h1 className="text-lg font-bold">
+      <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-b border-[#1F2937] bg-[#111827] px-4 py-3">
+        <h1 className="text-lg font-bold text-white">
           {results?.project?.name ?? "项目详情"}
         </h1>
         <div className="flex flex-wrap items-center gap-2">
@@ -171,6 +171,7 @@ export default function ProjectPage({
               onClick={() => {
                 if (teamId) backfill.mutate({ teamId, projectId });
               }}
+              className="border-[#374151] text-[#9CA3AF] hover:bg-[#1F2937] hover:text-white"
             >
               {backfill.isPending ? "补全中..." : "补全公司"}
             </Button>
@@ -179,6 +180,7 @@ export default function ProjectPage({
             onClick={handleGenerate}
             disabled={generating || !teamId}
             size="sm"
+            className="bg-[#C59D5F] text-white hover:bg-[#D4AD6F]"
           >
             {generating ? "正在启动..." : hasData ? "重新生成" : "生成产业链"}
           </Button>
@@ -187,7 +189,7 @@ export default function ProjectPage({
 
       {/* Generation progress — self-collapsible */}
       {teamId && (
-        <div className="shrink-0 border-b border-gray-200 px-4 py-3">
+        <div className="shrink-0 border-b border-[#1F2937] px-4 py-3">
           <GenerationProgress teamId={teamId} projectId={projectId} />
         </div>
       )}
@@ -215,7 +217,7 @@ export default function ProjectPage({
           </>
         ) : (
           <div className="flex h-full items-center justify-center">
-            <p className="text-gray-400">
+            <p className="text-[#6B7280]">
               {teamId
                 ? "点击「生成产业链」开始分析"
                 : "请先选择团队以开始分析"}
@@ -226,13 +228,13 @@ export default function ProjectPage({
 
       {/* Bottom panel — selected node details + companies */}
       {selectedNodeId && (
-        <div className="min-h-[400px] overflow-y-auto border-t border-gray-200 bg-white">
+        <div className="min-h-[400px] overflow-y-auto border-t border-[#1F2937] bg-[#111827]">
           {/* Node info header */}
           {selectedNodeDetail && (
-            <div className="border-b border-gray-100 bg-gray-50 px-6 py-3">
+            <div className="border-b border-[#1F2937] bg-[#1F2937] px-6 py-3">
               {/* Title row */}
               <div className="flex items-center justify-between">
-                <h2 className="text-base font-semibold">{selectedNodeDetail.name}</h2>
+                <h2 className="text-base font-semibold text-white">{selectedNodeDetail.name}</h2>
                 <div className="flex items-center gap-2">
                   {!selectedNodeHasChildren && selectedNodeId !== "industry-root" && (
                     <Button
@@ -245,15 +247,16 @@ export default function ProjectPage({
                         const interval = setInterval(() => refetchResults(), 3000);
                         setTimeout(() => clearInterval(interval), 180_000);
                       }}
+                      className="border-[#374151] text-[#9CA3AF] hover:bg-[#374151] hover:text-white"
                     >
                       {expandNode.isPending ? "挖掘中..." : "继续挖掘 ↓"}
                     </Button>
                   )}
                   {selectedNodeHasChildren && (
-                    <span className="rounded bg-green-50 px-2 py-1 text-xs text-green-600">已展开</span>
+                    <span className="rounded bg-[#10B981]/10 px-2 py-1 text-xs text-[#10B981]">已展开</span>
                   )}
                   <button
-                    className="text-sm text-gray-400 hover:text-gray-600"
+                    className="text-sm text-[#6B7280] hover:text-white"
                     onClick={() => {
                       setSelectedNodeId(null);
                       setNodeCompanies([]);
@@ -265,25 +268,25 @@ export default function ProjectPage({
                 </div>
               </div>
               {/* Description */}
-              <p className="mt-1 text-xs text-gray-500 line-clamp-2">{selectedNodeDetail.description}</p>
+              <p className="mt-1 text-xs text-[#9CA3AF] line-clamp-2">{selectedNodeDetail.description}</p>
               {/* Metrics row */}
               <div className="mt-2 flex flex-wrap gap-4">
                 {selectedNodeDetail.profitMargin && (
                   <div>
-                    <span className="text-xs text-gray-400">利润率 </span>
-                    <span className="text-sm font-medium">{selectedNodeDetail.profitMargin}</span>
+                    <span className="text-xs text-[#6B7280]">利润率 </span>
+                    <span className="text-sm font-medium text-white">{selectedNodeDetail.profitMargin}</span>
                   </div>
                 )}
                 {selectedNodeDetail.marketSize && (
                   <div>
-                    <span className="text-xs text-gray-400">市场规模 </span>
-                    <span className="text-sm font-medium">{selectedNodeDetail.marketSize}</span>
+                    <span className="text-xs text-[#6B7280]">市场规模 </span>
+                    <span className="text-sm font-medium text-white">{selectedNodeDetail.marketSize}</span>
                   </div>
                 )}
                 {selectedNodeDetail.growthTrend && (
                   <div>
-                    <span className="text-xs text-gray-400">增长趋势 </span>
-                    <span className="text-sm font-medium">{selectedNodeDetail.growthTrend}</span>
+                    <span className="text-xs text-[#6B7280]">增长趋势 </span>
+                    <span className="text-sm font-medium text-white">{selectedNodeDetail.growthTrend}</span>
                   </div>
                 )}
               </div>
@@ -294,7 +297,7 @@ export default function ProjectPage({
           {selectedCompany ? (
             <div className="p-4">
               <button
-                className="mb-3 text-sm text-blue-600 hover:underline"
+                className="mb-3 text-sm text-[#C59D5F] hover:underline"
                 onClick={() => setSelectedCompany(null)}
               >
                 ← 返回公司列表
@@ -306,21 +309,21 @@ export default function ProjectPage({
             </div>
           ) : nodeCompanies.length > 0 ? (
             <div className="p-4">
-              <h3 className="mb-3 text-sm font-semibold text-gray-700">
+              <h3 className="mb-3 text-sm font-semibold text-[#9CA3AF]">
                 「{selectedNodeName}」相关公司 ({nodeCompanies.length})
               </h3>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {nodeCompanies.map((company) => (
                   <button
                     key={company.id}
-                    className="rounded-lg border border-gray-200 p-4 text-left transition-all hover:border-blue-300 hover:shadow-sm"
+                    className="rounded-lg border border-[#374151] bg-[#1F2937] p-4 text-left transition-all hover:border-[#C59D5F] hover:shadow-sm hover:shadow-[#C59D5F]/10"
                     onClick={() => setSelectedCompany(company)}
                   >
                     <div className="flex items-start justify-between">
                       <div>
-                        <div className="font-medium">{company.name}</div>
+                        <div className="font-medium text-white">{company.name}</div>
                         {company.ticker && (
-                          <div className="text-xs text-gray-400">
+                          <div className="text-xs text-[#6B7280]">
                             {company.exchange}:{company.ticker}
                           </div>
                         )}
@@ -333,11 +336,11 @@ export default function ProjectPage({
                         {POSITION_LABELS[company.marketPosition] ?? company.marketPosition}
                       </span>
                     </div>
-                    <p className="mt-2 text-xs text-gray-500 line-clamp-2">
+                    <p className="mt-2 text-xs text-[#9CA3AF] line-clamp-2">
                       {company.mainBusiness}
                     </p>
                     {(company.revenue || company.marketCap) && (
-                      <div className="mt-2 flex gap-3 text-xs text-gray-400">
+                      <div className="mt-2 flex gap-3 text-xs text-[#6B7280]">
                         {company.marketCap && <span>市值: {company.marketCap}</span>}
                         {company.revenue && <span>营收: {company.revenue}</span>}
                         {company.grossMargin && <span>毛利率: {company.grossMargin}</span>}
@@ -345,7 +348,7 @@ export default function ProjectPage({
                     )}
                     {company.analystRating && (
                       <div className="mt-2">
-                        <span className="rounded bg-indigo-50 px-1.5 py-0.5 text-xs font-medium text-indigo-700">
+                        <span className="rounded bg-[#C59D5F]/10 px-1.5 py-0.5 text-xs font-medium text-[#C59D5F]">
                           {company.analystRating}
                         </span>
                       </div>
@@ -356,7 +359,7 @@ export default function ProjectPage({
             </div>
           ) : (
             <div className="flex items-center justify-center py-8">
-              <p className="text-sm text-gray-400">该环节暂无公司数据</p>
+              <p className="text-sm text-[#6B7280]">该环节暂无公司数据</p>
             </div>
           )}
         </div>

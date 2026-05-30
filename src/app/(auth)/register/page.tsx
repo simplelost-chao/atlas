@@ -51,17 +51,17 @@ export default function RegisterPage() {
   }
 
   return (
-    <Card>
+    <Card className="bg-[#1F2937] border-[#374151]">
       <CardHeader>
-        <CardTitle className="text-center">注册</CardTitle>
+        <CardTitle className="text-center text-white">注册</CardTitle>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
           {error && (
-            <p className="text-sm text-red-600 text-center">{error}</p>
+            <p className="text-sm text-red-400 text-center">{error}</p>
           )}
           <div className="space-y-2">
-            <label htmlFor="name" className="text-sm font-medium">
+            <label htmlFor="name" className="text-sm font-medium text-[#9CA3AF]">
               名称
             </label>
             <Input
@@ -70,10 +70,11 @@ export default function RegisterPage() {
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
+              className="bg-[#111827] border-[#374151] text-white placeholder:text-[#4B5563]"
             />
           </div>
           <div className="space-y-2">
-            <label htmlFor="email" className="text-sm font-medium">
+            <label htmlFor="email" className="text-sm font-medium text-[#9CA3AF]">
               邮箱
             </label>
             <Input
@@ -82,10 +83,11 @@ export default function RegisterPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+              className="bg-[#111827] border-[#374151] text-white placeholder:text-[#4B5563]"
             />
           </div>
           <div className="space-y-2">
-            <label htmlFor="password" className="text-sm font-medium">
+            <label htmlFor="password" className="text-sm font-medium text-[#9CA3AF]">
               密码（至少8位）
             </label>
             <Input
@@ -95,15 +97,20 @@ export default function RegisterPage() {
               onChange={(e) => setPassword(e.target.value)}
               minLength={8}
               required
+              className="bg-[#111827] border-[#374151] text-white placeholder:text-[#4B5563]"
             />
           </div>
-          <Button type="submit" className="w-full" disabled={loading}>
+          <Button
+            type="submit"
+            className="w-full bg-[#C59D5F] text-white hover:bg-[#D4AD6F]"
+            disabled={loading}
+          >
             {loading ? "注册中..." : "注册"}
           </Button>
         </form>
-        <p className="mt-4 text-center text-sm text-gray-500">
+        <p className="mt-4 text-center text-sm text-[#6B7280]">
           已有账号？{" "}
-          <Link href="/login" className="text-gray-900 underline">
+          <Link href="/login" className="text-[#C59D5F] hover:underline">
             登录
           </Link>
         </p>

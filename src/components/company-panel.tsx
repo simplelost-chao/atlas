@@ -16,28 +16,28 @@ const POSITION_LABELS: Record<string, string> = {
 };
 
 const POSITION_COLORS: Record<string, string> = {
-  LEADER: "bg-green-100 text-green-800",
-  CHALLENGER: "bg-blue-100 text-blue-800",
-  EMERGING: "bg-yellow-100 text-yellow-800",
-  NICHE: "bg-gray-100 text-gray-800",
+  LEADER: "bg-green-900/50 text-green-400",
+  CHALLENGER: "bg-blue-900/50 text-blue-400",
+  EMERGING: "bg-yellow-900/50 text-yellow-400",
+  NICHE: "bg-[#374151] text-[#9CA3AF]",
 };
 
 export function CompanyPanel({ company, onClose }: CompanyPanelProps) {
   if (!company) return null;
 
   return (
-    <div className="bg-white">
+    <div className="bg-[#111827]">
       {/* Header */}
       <div className="mb-4 flex items-start justify-between">
         <div>
-          <h2 className="text-lg font-bold">{company.name}</h2>
+          <h2 className="text-lg font-bold text-white">{company.name}</h2>
           {company.ticker && (
-            <span className="text-sm text-gray-500">
+            <span className="text-sm text-[#9CA3AF]">
               {company.exchange}:{company.ticker}
             </span>
           )}
         </div>
-        <Button variant="ghost" size="sm" onClick={onClose}>
+        <Button variant="ghost" size="sm" onClick={onClose} className="text-[#6B7280] hover:text-white hover:bg-[#1F2937]">
           ✕
         </Button>
       </div>
@@ -53,19 +53,19 @@ export function CompanyPanel({ company, onClose }: CompanyPanelProps) {
 
       {/* Main Business */}
       <div className="mt-4">
-        <h3 className="text-sm font-semibold text-gray-700">主营业务</h3>
-        <p className="mt-1 text-sm text-gray-600">{company.mainBusiness}</p>
+        <h3 className="text-sm font-semibold text-[#9CA3AF]">主营业务</h3>
+        <p className="mt-1 text-sm text-white">{company.mainBusiness}</p>
       </div>
 
       {/* Core Products */}
       {company.coreProducts.length > 0 && (
         <div className="mt-4">
-          <h3 className="text-sm font-semibold text-gray-700">核心产品</h3>
+          <h3 className="text-sm font-semibold text-[#9CA3AF]">核心产品</h3>
           <div className="mt-1 flex flex-wrap gap-1">
             {company.coreProducts.map((product) => (
               <span
                 key={product}
-                className="rounded bg-gray-100 px-2 py-0.5 text-xs text-gray-700"
+                className="rounded bg-[#374151] px-2 py-0.5 text-xs text-[#D1D5DB]"
               >
                 {product}
               </span>
@@ -77,7 +77,7 @@ export function CompanyPanel({ company, onClose }: CompanyPanelProps) {
       {/* Financials */}
       {(company.revenue || company.marketCap) && (
         <div className="mt-4">
-          <h3 className="text-sm font-semibold text-gray-700">财务指标</h3>
+          <h3 className="text-sm font-semibold text-[#9CA3AF]">财务指标</h3>
           <div className="mt-2 grid grid-cols-2 gap-2">
             {company.marketCap && (
               <MetricCard label="市值" value={company.marketCap} />
@@ -105,18 +105,18 @@ export function CompanyPanel({ company, onClose }: CompanyPanelProps) {
       {/* Competitive */}
       {company.moat && (
         <div className="mt-4">
-          <h3 className="text-sm font-semibold text-gray-700">护城河</h3>
-          <p className="mt-1 text-sm text-gray-600">{company.moat}</p>
+          <h3 className="text-sm font-semibold text-[#9CA3AF]">护城河</h3>
+          <p className="mt-1 text-sm text-white">{company.moat}</p>
         </div>
       )}
 
       {/* Investment Highlights */}
       {company.highlights.length > 0 && (
         <div className="mt-4">
-          <h3 className="text-sm font-semibold text-gray-700">投资亮点</h3>
+          <h3 className="text-sm font-semibold text-[#9CA3AF]">投资亮点</h3>
           <ul className="mt-1 list-inside list-disc space-y-1">
             {company.highlights.map((h, i) => (
-              <li key={i} className="text-sm text-gray-600">
+              <li key={i} className="text-sm text-[#D1D5DB]">
                 {h}
               </li>
             ))}
@@ -127,10 +127,10 @@ export function CompanyPanel({ company, onClose }: CompanyPanelProps) {
       {/* Risks */}
       {company.risks.length > 0 && (
         <div className="mt-4">
-          <h3 className="text-sm font-semibold text-gray-700">风险提示</h3>
+          <h3 className="text-sm font-semibold text-[#9CA3AF]">风险提示</h3>
           <ul className="mt-1 list-inside list-disc space-y-1">
             {company.risks.map((r, i) => (
-              <li key={i} className="text-sm text-red-600">
+              <li key={i} className="text-sm text-red-400">
                 {r}
               </li>
             ))}
@@ -141,8 +141,8 @@ export function CompanyPanel({ company, onClose }: CompanyPanelProps) {
       {/* Analyst Rating */}
       {company.analystRating && (
         <div className="mt-4">
-          <h3 className="text-sm font-semibold text-gray-700">综合评级</h3>
-          <span className="mt-1 inline-block rounded bg-indigo-100 px-2 py-0.5 text-sm font-medium text-indigo-800">
+          <h3 className="text-sm font-semibold text-[#9CA3AF]">综合评级</h3>
+          <span className="mt-1 inline-block rounded bg-[#C59D5F]/10 px-2 py-0.5 text-sm font-medium text-[#C59D5F]">
             {company.analystRating}
           </span>
         </div>
@@ -151,12 +151,12 @@ export function CompanyPanel({ company, onClose }: CompanyPanelProps) {
       {/* Competitors */}
       {company.competitors.length > 0 && (
         <div className="mt-4">
-          <h3 className="text-sm font-semibold text-gray-700">主要竞争对手</h3>
+          <h3 className="text-sm font-semibold text-[#9CA3AF]">主要竞争对手</h3>
           <div className="mt-1 flex flex-wrap gap-1">
             {company.competitors.map((c) => (
               <span
                 key={c}
-                className="rounded bg-gray-100 px-2 py-0.5 text-xs text-gray-700"
+                className="rounded bg-[#374151] px-2 py-0.5 text-xs text-[#D1D5DB]"
               >
                 {c}
               </span>
@@ -170,9 +170,9 @@ export function CompanyPanel({ company, onClose }: CompanyPanelProps) {
 
 function MetricCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded bg-gray-50 p-2">
-      <div className="text-xs text-gray-500">{label}</div>
-      <div className="text-sm font-medium text-gray-900">{value}</div>
+    <div className="rounded bg-[#1F2937] p-2 border border-[#374151]">
+      <div className="text-xs text-[#6B7280]">{label}</div>
+      <div className="text-sm font-medium text-white">{value}</div>
     </div>
   );
 }

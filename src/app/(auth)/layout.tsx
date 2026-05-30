@@ -4,11 +4,14 @@ export default function AuthLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50">
+    <div className="flex min-h-screen items-center justify-center bg-[#111827]">
       <div className="w-full max-w-md space-y-6 p-8">
-        <div className="text-center">
-          <h1 className="text-3xl font-bold">Atlas</h1>
-          <p className="mt-1 text-sm text-gray-500">产业链分析平台</p>
+        <div className="flex flex-col items-center gap-2">
+          <svg width="48" height="48" viewBox="0 0 64 64" fill="none">
+            <path d="M32 8L54 52H42L38 44H26L22 52H10L32 8ZM29 36H35L32 28L29 36Z" fill="#C59D5F" />
+          </svg>
+          <h1 className="text-2xl font-bold tracking-widest text-white">ATLAS</h1>
+          <p className="text-sm text-[#6B7280]">产业链分析平台</p>
         </div>
         {children}
       </div>

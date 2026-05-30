@@ -2,26 +2,38 @@
 @plugin "tailwindcss-animate";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #111827;
+  --foreground: #f3f4f6;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-inter);
   --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: Inter, Arial, Helvetica, sans-serif;
+}
+
+/* Atlas Brand Colors */
+:root {
+  --atlas-black: #111827;
+  --atlas-gray: #374151;
+  --atlas-stone: #6B7280;
+  --atlas-light: #F3F4F6;
+  --atlas-gold: #C59D5F;
+  --atlas-green: #10B981;
+}
+
+@keyframes logo-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; filter: brightness(1.3); }
+}
+
+.animate-logo {
+  animation: logo-pulse 3s ease-in-out infinite;
 }

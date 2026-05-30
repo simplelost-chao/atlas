@@ -6,7 +6,7 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Atlas - 产业链分析平台",
+  title: "Atlas - Map Industries. Find Companies. Discover Value.",
   description: "产业链分析与投资标的挖掘平台",
 };
 
@@ -17,7 +17,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="zh-CN">
-      <body className={inter.className}>
+      <body className={`${inter.className} bg-[#111827] text-white`}>
         <Providers>{children}</Providers>
       </body>
     </html>

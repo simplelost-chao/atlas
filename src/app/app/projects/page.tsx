@@ -24,7 +24,7 @@ export default function ProjectsPage() {
   if (teamLoading || isLoading) {
     return (
       <div className="flex items-center justify-center py-16">
-        <p className="text-gray-400">加载中...</p>
+        <p className="text-[#6B7280]">加载中...</p>
       </div>
     );
   }
@@ -32,33 +32,35 @@ export default function ProjectsPage() {
   return (
     <div className="p-4 md:p-6">
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold">项目列表</h1>
+        <h1 className="text-2xl font-bold text-white">项目列表</h1>
         <Link href="/app/projects/new">
-          <Button>新建项目</Button>
+          <Button className="bg-[#C59D5F] text-white hover:bg-[#D4AD6F]">新建项目</Button>
         </Link>
       </div>
 
       {!projects || projects.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-gray-300 py-16">
-          <p className="text-gray-500">还没有项目</p>
+        <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-[#374151] py-16">
+          <p className="text-[#6B7280]">还没有项目</p>
           <Link href="/app/projects/new" className="mt-4">
-            <Button variant="outline">创建第一个项目</Button>
+            <Button variant="outline" className="border-[#374151] text-[#9CA3AF] hover:bg-[#1F2937] hover:text-white">
+              创建第一个项目
+            </Button>
           </Link>
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {projects.map((project) => (
             <Link key={project.id} href={`/app/projects/${project.id}`}>
-              <Card className="cursor-pointer transition-shadow hover:shadow-md">
+              <Card className="cursor-pointer bg-[#1F2937] border-[#374151] transition-all hover:border-[#C59D5F] hover:shadow-md hover:shadow-[#C59D5F]/10">
                 <CardHeader>
-                  <CardTitle>{project.name}</CardTitle>
+                  <CardTitle className="text-white">{project.name}</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm text-[#9CA3AF]">
                     行业：{project.industry}
                   </p>
                   {project.chain && (
-                    <p className="mt-1 text-xs text-gray-400">
+                    <p className="mt-1 text-xs text-[#6B7280]">
                       {STATUS_LABELS[project.chain.status] ?? project.chain.status}
                     </p>
                   )}
