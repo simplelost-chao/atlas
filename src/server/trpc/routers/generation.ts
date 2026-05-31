@@ -47,10 +47,18 @@ export const generationRouter = createRouter({
         });
       }
 
-      // Delete existing chain if regenerating
+      // Archive existing chain instead of deleting — NEVER delete data
       if (project.chain) {
-        await ctx.db.industryChain.delete({
+        await ctx.db.industryChain.update({
           where: { id: project.chain.id },
+          data: { status: "ARCHIVED" as any },
+        });
+        // Unlink from project so a new chain can be created
+        // (projectId has @unique, so we need to clear it)
+        // Instead, just mark archived and create new project for new chain
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "该产业已有数据，如需重新生成请创建新项目。现有数据不会被删除。",
         });
       }
 

@@ -440,13 +440,24 @@ export async function runFullPipeline(ctx: PipelineContext): Promise<void> {
 
     ctx.onProgress?.(5, "产业链生成完成！");
   } catch (error: any) {
-    await appendLog(ctx, { step: -1, stepName: "错误", message: `生成失败: ${error.message}` });
+    // Check if we have meaningful data despite the error
+    const nodeCount = await ctx.db.chainNode.count({ where: { chainId: ctx.chainId } });
+    const companyCount = await ctx.db.company.count({ where: { chainNode: { chainId: ctx.chainId } } });
 
-    // Update status to FAILED
-    await ctx.db.industryChain.update({
-      where: { id: ctx.chainId },
-      data: { status: "FAILED" },
-    });
-    throw error;
+    if (nodeCount > 0 && companyCount > 0) {
+      // Data exists — mark as completed, just log the error
+      await appendLog(ctx, { step: -1, stepName: "警告", message: `部分步骤失败但数据已保存: ${error.message}` });
+      await ctx.db.industryChain.update({
+        where: { id: ctx.chainId },
+        data: { status: "COMPLETED" },
+      });
+    } else {
+      await appendLog(ctx, { step: -1, stepName: "错误", message: `生成失败: ${error.message}` });
+      await ctx.db.industryChain.update({
+        where: { id: ctx.chainId },
+        data: { status: "FAILED" },
+      });
+      throw error;
+    }
   }
 }

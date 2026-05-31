@@ -11,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [email, setEmail] = useState("");
+  const [login, setLogin] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -23,19 +23,11 @@ function LoginForm() {
     setError("");
     setLoading(true);
 
-    const result = await signIn("credentials", {
-      email,
+    await signIn("credentials", {
+      login,
       password,
-      redirect: false,
+      callbackUrl,
     });
-
-    setLoading(false);
-
-    if (result?.error) {
-      setError("邮箱或密码错误");
-    } else {
-      router.push(callbackUrl);
-    }
   }
 
   return (
@@ -49,14 +41,15 @@ function LoginForm() {
             <p className="text-sm text-red-400 text-center">{error}</p>
           )}
           <div className="space-y-2">
-            <label htmlFor="email" className="text-sm font-medium text-[#9CA3AF]">
-              邮箱
+            <label htmlFor="login" className="text-sm font-medium text-[#9CA3AF]">
+              用户名或邮箱
             </label>
             <Input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              id="login"
+              type="text"
+              value={login}
+              onChange={(e) => setLogin(e.target.value)}
+              placeholder="admin 或 admin@atlas.dev"
               required
               className="bg-[#111827] border-[#374151] text-white placeholder:text-[#4B5563]"
             />

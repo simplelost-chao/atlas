@@ -179,7 +179,7 @@ export async function generateObjectViaCLI<T extends z.ZodType>(
   try {
     const { stdout } = await execFileAsync(
       "claude",
-      ["-p", fullPrompt, "--output-format", "json"],
+      ["-p", fullPrompt, "--output-format", "json", "--allowedTools", "mcp__fetch__fetch,WebSearch"],
       {
         timeout: 180_000,
         maxBuffer: 1024 * 1024 * 10,

@@ -6,7 +6,7 @@ export default function HomePage() {
     <main className="flex min-h-screen flex-col items-center justify-center bg-[#111827] text-white">
       <div className="flex flex-col items-center gap-6 px-4">
         {/* Logo */}
-        <AtlasLogo size={80} animated color="white" />
+        <AtlasLogo size={80} animated variant="dark" />
         <h1 className="text-4xl font-bold tracking-widest">ATLAS</h1>
         <p className="text-center text-lg text-[#6B7280]">
           Map Industries. Find Companies. Discover Value.

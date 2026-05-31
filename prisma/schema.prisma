@@ -10,6 +10,7 @@ datasource db {
 
 model User {
   id            String    @id @default(cuid())
+  username      String?   @unique
   name          String?
   email         String    @unique
   emailVerified DateTime?
@@ -221,6 +222,20 @@ model Company {
   risks                 String[] @default([])
   analystRating         String?
   customerConcentration String?
+
+  // Live market data (from Yahoo Finance API)
+  yahooSymbol      String?
+  liveMarketCap    BigInt?
+  liveRevenue      BigInt?
+  liveRevenueGrowth Decimal? @db.Decimal(8, 2)
+  liveGrossMargin  Decimal? @db.Decimal(8, 2)
+  liveNetMargin    Decimal? @db.Decimal(8, 2)
+  liveRoe          Decimal? @db.Decimal(8, 2)
+  livePrice        Decimal? @db.Decimal(12, 4)
+  livePeRatio      Decimal? @db.Decimal(10, 2)
+  liveChange       Decimal? @db.Decimal(8, 4)
+  liveCurrency     String?
+  liveUpdatedAt    DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

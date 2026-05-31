@@ -13,12 +13,16 @@ export default function Icon() {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          background: "#111827",
+          background: "white",
           borderRadius: 6,
         }}
       >
         <svg width="24" height="24" viewBox="0 0 64 64" fill="none">
-          <path d="M32 8L54 52H42L38 44H26L22 52H10L32 8ZM29 36H35L32 28L29 36Z" fill="#C59D5F" />
+          <polygon points="32,4 40,18 24,18" fill="#111827" />
+          <polygon points="22,21 30,21 26,28" fill="#C59D5F" />
+          <polygon points="34,21 42,21 38,28" fill="#111827" />
+          <polygon points="14,44 24,31 28,31 20,44" fill="#111827" />
+          <polygon points="36,31 40,31 50,44 44,44" fill="#111827" />
         </svg>
       </div>
     ),

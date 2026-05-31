@@ -17,8 +17,8 @@ export const ChainSkeletonSchema = z.object({
   nodes: z
     .array(ChainSkeletonNodeSchema)
     .min(3)
-    .max(8)
-    .describe("一级产业环节列表，3-8个"),
+    .min(1)
+    .describe("一级产业环节列表，按行业实际结构列出所有关键环节"),
 });
 
 export type ChainSkeleton = z.infer<typeof ChainSkeletonSchema>;
@@ -38,16 +38,16 @@ export const SubNodeSchema = z.object({
   keyDrivers: z
     .array(z.string())
     .default([])
-    .describe("核心驱动因素，2-4个"),
+    .describe("核心驱动因素"),
 });
 
 export const NodeExpansionSchema = z.object({
   parentNodeName: z.string().describe("父环节名称"),
   subNodes: z
     .array(SubNodeSchema)
-    .min(2)
-    .max(6)
-    .describe("子环节列表，2-6个"),
+    .min(1)
+    
+    .describe("子环节列表，按实际情况列出"),
 });
 
 export type NodeExpansion = z.infer<typeof NodeExpansionSchema>;
@@ -75,9 +75,9 @@ export const CompanyDiscoverySchema = z.object({
   nodeName: z.string().describe("所属环节名称"),
   companies: z
     .array(DiscoveredCompanySchema)
-    .min(2)
-    .max(8)
-    .describe("代表性公司列表，2-8家"),
+    .min(1)
+    
+    .describe("代表性公司列表，按实际情况列出"),
 });
 
 export type CompanyDiscovery = z.infer<typeof CompanyDiscoverySchema>;
@@ -137,7 +137,7 @@ export const ProfitChainSchema = z.object({
   summary: z.string().describe("利润链分析总结，200字以内"),
   nodeAnalyses: z
     .array(NodeProfitAnalysisSchema)
-    .min(2)
+    .min(1)
     .describe("各环节利润分析"),
   profitFlowDescription: z.string().describe("利润在产业链中的整体流向描述"),
 });

@@ -10,26 +10,25 @@ import { AtlasLogo, AtlasWordmark } from "@/components/atlas-logo";
 
 const navItems = [
   {
-    label: "项目",
+    label: "产业",
     href: "/app/projects",
     icon: (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-        <rect x="3" y="3" width="7" height="7" rx="1" />
-        <rect x="14" y="3" width="7" height="7" rx="1" />
-        <rect x="3" y="14" width="7" height="7" rx="1" />
-        <rect x="14" y="14" width="7" height="7" rx="1" />
+        <circle cx="12" cy="5" r="3" />
+        <line x1="12" y1="8" x2="12" y2="12" />
+        <line x1="12" y1="12" x2="6" y2="16" />
+        <line x1="12" y1="12" x2="18" y2="16" />
+        <circle cx="6" cy="19" r="3" />
+        <circle cx="18" cy="19" r="3" />
       </svg>
     ),
   },
   {
-    label: "团队",
-    href: "/app/team",
+    label: "状态",
+    href: "/app/status",
     icon: (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="9" cy="7" r="4" />
-        <path d="M3 21v-2a4 4 0 014-4h4a4 4 0 014 4v2" />
-        <path d="M16 3.13a4 4 0 010 7.75" />
-        <path d="M21 21v-2a4 4 0 00-3-3.87" />
+        <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
       </svg>
     ),
   },
@@ -54,19 +53,25 @@ function MobileNav() {
           key={item.href}
           href={item.href}
           className={cn(
-            "flex flex-1 flex-col items-center py-2 text-xs",
+            "flex flex-1 flex-col items-center gap-0.5 py-2 text-xs",
             pathname.startsWith(item.href)
               ? "text-[#C59D5F] font-medium"
               : "text-[#6B7280]"
           )}
         >
+          {item.icon}
           {item.label}
         </Link>
       ))}
       <button
         onClick={() => signOut({ callbackUrl: "/login" })}
-        className="flex flex-1 flex-col items-center py-2 text-xs text-[#6B7280]"
+        className="flex flex-1 flex-col items-center gap-0.5 py-2 text-xs text-[#6B7280]"
       >
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" />
+          <polyline points="16 17 21 12 16 7" />
+          <line x1="21" y1="12" x2="9" y2="12" />
+        </svg>
         退出
       </button>
     </div>
@@ -79,7 +84,7 @@ function DesktopSidebar() {
     <aside className="hidden md:flex h-screen w-56 flex-col border-r border-[#1F2937] bg-[#111827]">
       <div className="p-4">
         <Link href="/app" className="flex items-center gap-2">
-          <AtlasLogo size={28} color="white" />
+          <AtlasLogo size={28} variant="dark" />
           <AtlasWordmark className="text-white" />
         </Link>
       </div>

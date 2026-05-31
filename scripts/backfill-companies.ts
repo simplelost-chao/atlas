@@ -67,7 +67,7 @@ marketPosition只能是LEADER、CHALLENGER、EMERGING、NICHE之一。
 JSON格式示例：
 ${EXAMPLE}`;
 
-  const { stdout } = await execFileAsync("claude", ["-p", prompt, "--output-format", "json"], {
+  const { stdout } = await execFileAsync("claude", ["-p", prompt, "--output-format", "json", "--allowedTools", "mcp__fetch__fetch,WebSearch"], {
     timeout: 180_000,
     maxBuffer: 1024 * 1024 * 10,
   });

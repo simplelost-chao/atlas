@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function RegisterPage() {
   const router = useRouter();
+  const [username, setUsername] = useState("");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -26,7 +27,7 @@ export default function RegisterPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          json: { name, email, password },
+          json: { username, name, email, password },
         }),
       });
 
@@ -37,7 +38,7 @@ export default function RegisterPage() {
 
       // Auto-login after registration
       await signIn("credentials", {
-        email,
+        login: email,
         password,
         redirect: false,
       });
@@ -61,8 +62,22 @@ export default function RegisterPage() {
             <p className="text-sm text-red-400 text-center">{error}</p>
           )}
           <div className="space-y-2">
+            <label htmlFor="username" className="text-sm font-medium text-[#9CA3AF]">
+              用户名
+            </label>
+            <Input
+              id="username"
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              placeholder="如 zhangsan"
+              required
+              className="bg-[#111827] border-[#374151] text-white placeholder:text-[#4B5563]"
+            />
+          </div>
+          <div className="space-y-2">
             <label htmlFor="name" className="text-sm font-medium text-[#9CA3AF]">
-              名称
+              昵称
             </label>
             <Input
               id="name"

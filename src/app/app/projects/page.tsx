@@ -32,7 +32,7 @@ export default function ProjectsPage() {
   return (
     <div className="p-4 md:p-6">
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">项目列表</h1>
+        <h1 className="text-2xl font-bold text-gray-900">产业列表</h1>
         <Link href="/app/projects/new">
           <Button className="bg-[#C59D5F] text-white hover:bg-[#D4AD6F]">新建项目</Button>
         </Link>
