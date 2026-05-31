@@ -263,6 +263,67 @@ export async function fetchFinancials(ticker: string, exchange: string): Promise
 }
 
 /**
+ * Fetch related companies for a given ticker (for Round 2 expansion).
+ * Returns recommended symbols + companies in the same industry.
+ */
+export async function fetchRelatedCompanies(
+  ticker: string,
+  exchange: string
+): Promise<Array<{ symbol: string; name: string; industry?: string }>> {
+  const symbol = toYahooSymbol(ticker, exchange);
+  if (!symbol) return [];
+
+  const results: Array<{ symbol: string; name: string; industry?: string }> = [];
+  const seen = new Set<string>();
+
+  try {
+    // 1. Get recommended symbols
+    const recs = await yahooFinance.recommendationsBySymbol(symbol);
+    if (recs?.recommendedSymbols) {
+      for (const rec of recs.recommendedSymbols) {
+        if (!seen.has(rec.symbol)) {
+          seen.add(rec.symbol);
+          results.push({ symbol: rec.symbol, name: rec.symbol });
+        }
+      }
+    }
+  } catch {
+    // ignore
+  }
+
+  try {
+    // 2. Get industry peers via quoteSummary
+    const summary = await yahooFinance.quoteSummary(symbol, {
+      modules: ["assetProfile"],
+    });
+    const profile = summary.assetProfile;
+    if (profile?.industry) {
+      // Search for companies in the same industry
+      try {
+        const searchResults = await yahooFinance.search(profile.industry, {
+          newsCount: 0,
+          quotesCount: 20,
+        });
+        for (const q of searchResults.quotes ?? []) {
+          const s = (q as any).symbol;
+          const n = (q as any).shortname || (q as any).longname || s;
+          if (s && !seen.has(s)) {
+            seen.add(s);
+            results.push({ symbol: s, name: n, industry: profile.industry });
+          }
+        }
+      } catch {
+        // ignore
+      }
+    }
+  } catch {
+    // ignore
+  }
+
+  return results;
+}
+
+/**
  * Fetch and format all data for a company, ready to display
  */
 export async function fetchCompanyMarketData(ticker: string, exchange: string): Promise<{
