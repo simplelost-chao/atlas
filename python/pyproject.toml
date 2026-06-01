@@ -1,0 +1,33 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "industry-analysis"
+version = "0.1.0"
+description = "Supply-chain (产业链) research and mining: ARK-theme-rooted DAG mined via QuantAgent CLI"
+requires-python = ">=3.11"
+dependencies = [
+    "pydantic>=2.10",
+    "pydantic-settings>=2.7",
+    "typer>=0.12",
+    "fastapi>=0.115",
+    "uvicorn>=0.34",
+    "pyyaml>=6.0",
+    "loguru>=0.7",
+    "pdfminer.six>=20221105",
+    "edgartools>=5.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0", "httpx>=0.28"]
+
+[project.scripts]
+ia = "industry_analysis.cli.main:app"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/industry_analysis"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]

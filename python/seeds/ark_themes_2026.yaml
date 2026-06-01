@@ -1,0 +1,14 @@
+themes:
+  - {id: ai-infrastructure, name_cn: AI基础设施, name_en: AI Infrastructure}
+  - {id: ai-consumer-os, name_cn: AI消费操作系统, name_en: AI Consumer Operating System}
+  - {id: ai-productivity, name_cn: AI生产力, name_en: AI Productivity}
+  - {id: bitcoin, name_cn: 比特币, name_en: Bitcoin}
+  - {id: tokenized-assets, name_cn: 资产代币化, name_en: Tokenized Assets}
+  - {id: defi, name_cn: DeFi应用, name_en: DeFi Applications}
+  - {id: multiomics, name_cn: 多组学, name_en: Multiomics}
+  - {id: reusable-rockets, name_cn: 可复用火箭, name_en: Reusable Rockets}
+  - {id: robotics, name_cn: 机器人, name_en: Robotics}
+  - {id: distributed-energy, name_cn: 分布式能源, name_en: Distributed Energy}
+  - {id: autonomous-vehicles, name_cn: 自动驾驶, name_en: Autonomous Vehicles}
+  - {id: autonomous-logistics, name_cn: 自动物流, name_en: Autonomous Logistics}
+  - {id: great-acceleration, name_cn: 大加速, name_en: The Great Acceleration}
