@@ -147,6 +147,7 @@ model IndustryChain {
 
   project        Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
   nodes          ChainNode[]
+  edges          ChainEdge[]
   collabDocument CollabDocument?
 }
 
@@ -222,12 +223,13 @@ model ChainEdge {
   upstreamId   String
   downstreamId String
   rationale    String   @default("")
-  chainId      String   // scope: which chain this edge belongs to
+  chainId      String
   syncSource   NodeSyncSource @default(PYTHON_CLI)
   createdAt    DateTime @default(now())
 
-  upstream   ChainNode @relation("EdgeUpstream",   fields: [upstreamId],   references: [id], onDelete: Cascade)
-  downstream ChainNode @relation("EdgeDownstream",  fields: [downstreamId], references: [id], onDelete: Cascade)
+  upstream   ChainNode     @relation("EdgeUpstream",   fields: [upstreamId],   references: [id], onDelete: Cascade)
+  downstream ChainNode     @relation("EdgeDownstream",  fields: [downstreamId], references: [id], onDelete: Cascade)
+  chain      IndustryChain @relation(fields: [chainId], references: [id], onDelete: Cascade)
 
   @@unique([upstreamId, downstreamId, chainId])
   @@index([chainId])
