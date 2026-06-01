@@ -5,6 +5,7 @@ import { projectRouter } from "./routers/project";
 import { generationRouter } from "./routers/generation";
 import { commentRouter } from "./routers/comment";
 import { statusRouter } from "./routers/status";
+import { picksRouter } from "./routers/picks";
 
 export const appRouter = createRouter({
   auth: authRouter,
@@ -13,6 +14,7 @@ export const appRouter = createRouter({
   generation: generationRouter,
   comment: commentRouter,
   status: statusRouter,
+  picks: picksRouter,
 });
 
 export type AppRouter = typeof appRouter;
