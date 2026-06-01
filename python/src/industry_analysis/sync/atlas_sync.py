@@ -166,6 +166,9 @@ def sync_to_postgres(
                         py_to_pg[node.id] = pg_id
                         result.nodes_upserted += 1
 
+                # Commit nodes in chunks to avoid losing all work on interrupt
+                conn.commit()
+
                 # Sync edges — only between nodes we just synced
                 node_ids = {n.id for n in nodes}
                 for edge in store.all_edges():
@@ -181,13 +184,18 @@ def sync_to_postgres(
                            (id, "upstreamId", "downstreamId", rationale, "chainId",
                             "syncSource", "createdAt")
                            VALUES (%s,%s,%s,%s,%s,'PYTHON_CLI',NOW())
-                           ON CONFLICT ("upstreamId","downstreamId","chainId") DO NOTHING''',
+                           ON CONFLICT ("upstreamId","downstreamId","chainId")
+                           DO UPDATE SET rationale=EXCLUDED.rationale,
+                                         "syncSource"=EXCLUDED."syncSource"''',
                         (_cuid_like(), up_pg, dn_pg, edge.rationale, chain_id),
                     )
-                    if conn.cursor().rowcount == 0:
-                        result.edges_skipped += 1
-                    else:
+                    # cur.rowcount: 1 = inserted/updated, 0 = no change
+                    if cur.rowcount > 0:
                         result.edges_upserted += 1
+                    else:
+                        result.edges_skipped += 1
+
+                conn.commit()
 
     finally:
         conn.close()

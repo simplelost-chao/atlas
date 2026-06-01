@@ -33,7 +33,9 @@ ALTER TABLE "ChainEdge"
   ADD CONSTRAINT "ChainEdge_upstreamId_fkey"
     FOREIGN KEY ("upstreamId") REFERENCES "ChainNode"("id") ON DELETE CASCADE ON UPDATE CASCADE,
   ADD CONSTRAINT "ChainEdge_downstreamId_fkey"
-    FOREIGN KEY ("downstreamId") REFERENCES "ChainNode"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+    FOREIGN KEY ("downstreamId") REFERENCES "ChainNode"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT "ChainEdge_chainId_fkey"
+    FOREIGN KEY ("chainId") REFERENCES "IndustryChain"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 CREATE UNIQUE INDEX IF NOT EXISTS "ChainEdge_upstreamId_downstreamId_chainId_key"
   ON "ChainEdge"("upstreamId", "downstreamId", "chainId");
