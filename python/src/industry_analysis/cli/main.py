@@ -67,12 +67,23 @@ def node_path(node_id: str):
     typer.echo(" → ".join(n.name_cn for n in reversed(_store().path_to_root(node_id))))
 
 
+def _datasource_db():
+    from industry_analysis.datasource.store.datasource_db import DataSourceDB
+    cfg = get_settings()
+    if cfg.datasource_db_path and cfg.datasource_db_path.exists():
+        return DataSourceDB(cfg.datasource_db_path)
+    return None
+
+
 @app.command()
 def expand(node_id: str, auto_depth: int = 1, json: bool = False):
     s, c = _store(), _client()
-    cfg = get_settings().auto_confirm_grade
-    res = (_batch(s, c, node_id, depth=auto_depth, auto_confirm_grade=cfg) if auto_depth > 1
-           else _expand(s, c, node_id, auto_confirm_grade=cfg))
+    cfg = get_settings()
+    ds = _datasource_db()
+    res = (_batch(s, c, node_id, depth=auto_depth, auto_confirm_grade=cfg.auto_confirm_grade,
+                  datasource_db=ds) if auto_depth > 1
+           else _expand(s, c, node_id, auto_confirm_grade=cfg.auto_confirm_grade,
+                        datasource_db=ds))
     _emit(res, json)
 
 
@@ -119,6 +130,43 @@ def graph_export(out: str = "graph.json"):
     import json as j
     open(out, "w", encoding="utf-8").write(j.dumps(_store().export(), ensure_ascii=False, indent=2))
     typer.echo(f"exported -> {out}")
+
+
+@app.command("sync")
+def graph_sync(
+    chain_id: str = typer.Argument(..., help="Atlas IndustryChain.id to sync into"),
+    db_url: Optional[str] = typer.Option(None, "--db-url", help="Postgres URL (overrides IA_ATLAS_DB_URL)"),
+    theme: Optional[str] = typer.Option(None, "--theme", help="Only sync nodes with this theme_id"),
+    dry_run: bool = typer.Option(False, "--dry-run", help="Print what would be done, no writes"),
+    json: bool = False,
+):
+    """Sync confirmed Python CLI nodes into Atlas Postgres (one-way, idempotent)."""
+    from industry_analysis.sync.atlas_sync import sync_to_postgres
+
+    url = db_url or get_settings().atlas_db_url
+    if not url:
+        typer.echo("ERROR: Postgres URL required. Set IA_ATLAS_DB_URL or pass --db-url", err=True)
+        raise typer.Exit(1)
+
+    result = sync_to_postgres(_store(), url, chain_id, dry_run=dry_run, theme_filter=theme)
+
+    summary = {
+        "nodes_upserted": result.nodes_upserted,
+        "nodes_skipped": result.nodes_skipped,
+        "edges_upserted": result.edges_upserted,
+        "edges_skipped": result.edges_skipped,
+        "errors": result.errors,
+    }
+    if json:
+        _emit(summary, True)
+    else:
+        typer.echo(
+            f"Sync complete: nodes={result.nodes_upserted} new / {result.nodes_skipped} updated"
+            f", edges={result.edges_upserted} new / {result.edges_skipped} skipped"
+        )
+        if result.errors:
+            for e in result.errors:
+                typer.echo(f"  ERROR: {e}", err=True)
 
 
 if __name__ == "__main__":

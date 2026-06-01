@@ -31,6 +31,8 @@ class Settings(BaseSettings):
     auto_confirm_grade: str | None = None
     # Optional datasource DB path for evidence grounding in expand prompts
     datasource_db_path: Path | None = None
+    # Atlas Postgres URL for ia sync  (e.g. postgresql://user:pass@host/db)
+    atlas_db_url: str | None = None
 
 
 def get_settings() -> Settings:
