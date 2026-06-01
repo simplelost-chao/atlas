@@ -159,6 +159,9 @@ export const statusRouter = createRouter({
       pageSize: z.number().default(30),
       industry: z.string().default("all"),
       source: z.string().default("all"),
+      market: z.string().default("all"),
+      sortField: z.string().default("liveMarketCap"),
+      sortDir: z.enum(["asc", "desc"]).default("desc"),
     }))
     .query(async ({ ctx, input }) => {
       const where: any = {
@@ -175,6 +178,27 @@ export const statusRouter = createRouter({
         where.liveMarketCap = null;
         where.isPublic = true;
       }
+
+      // Market filter
+      const marketExchanges: Record<string, string[]> = {
+        us: ["NASDAQ", "NYSE", "AMEX"],
+        hk: ["HKEX"],
+        a: ["SSE", "SZSE", "上交所", "深交所", "上交所科创板", "深圳证券交易所", "上海证券交易所", "上海证券交易所科创板"],
+        jp: ["TSE", "东京证券交易所"],
+        kr: ["KRX", "KOSPI", "KOSDAQ"],
+        tw: ["TWSE", "TPE"],
+        eu: ["XETRA", "FRA", "LSE", "SIX", "Euronext Paris", "Euronext Amsterdam", "OMX Stockholm"],
+      };
+      if (input.market !== "all" && marketExchanges[input.market]) {
+        where.exchange = { in: marketExchanges[input.market] };
+      }
+
+      // Sort
+      const sortableFields = ["liveMarketCap", "liveRevenue", "liveRevenueGrowth", "liveGrossMargin", "liveNetMargin", "livePeRatio", "liveForwardPE", "name"];
+      const orderField = sortableFields.includes(input.sortField) ? input.sortField : "liveMarketCap";
+      const orderBy: any = orderField === "name"
+        ? [{ name: input.sortDir }]
+        : [{ [orderField]: { sort: input.sortDir, nulls: "last" } }, { name: "asc" }];
 
       const [companies, total] = await Promise.all([
         ctx.db.company.findMany({
@@ -193,7 +217,7 @@ export const statusRouter = createRouter({
               },
             },
           },
-          orderBy: [{ liveMarketCap: { sort: "desc", nulls: "last" } }, { name: "asc" }],
+          orderBy,
           skip: input.page * input.pageSize,
           take: input.pageSize,
         }),
