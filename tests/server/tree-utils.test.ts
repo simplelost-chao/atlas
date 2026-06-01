@@ -25,6 +25,8 @@ function mockNode(
     growthTrend: overrides.growthTrend ?? null,
     keyDrivers: overrides.keyDrivers ?? [],
     valueFlow: overrides.valueFlow ?? null,
+    aliases: overrides.aliases ?? [],
+    normKey: overrides.normKey ?? "",
     createdAt: new Date(),
     updatedAt: new Date(),
     companies: (overrides as any).companies ?? [],
