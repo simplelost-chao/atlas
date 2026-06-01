@@ -48,7 +48,9 @@ def gather_evidence(
             continue
         try:
             results = datasource_db.search(name, limit=limit_per_alias)
-        except Exception:
+        except (AttributeError, TypeError, ValueError):
+            # Skip this alias if the search interface is unexpected.
+            # DB-level errors (OperationalError etc.) propagate to caller.
             continue
         for r in results:
             key = (r.filer_name or "", r.section_path or "")
