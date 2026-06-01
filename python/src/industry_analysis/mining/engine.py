@@ -31,14 +31,16 @@ def expand(store, client, node_id: str, agent: str = "chain-miner",
     # Gather filing evidence for this node (if datasource available)
     evidence = gather_evidence(node.all_names(), datasource_db)
     evidence_block = format_evidence_block(evidence)
-    valid_ids = {e.id for e in evidence}
+    # Only validate citations when evidence was actually injected.
+    # None → skip validation entirely (no datasource); set → enforce citations.
+    valid_ids: set[str] | None = {e.id for e in evidence} if evidence else None
 
     prompt = build_expand_prompt(
         node, store.path_to_root(node_id),
         [n.name_cn for n in existing],
         evidence_block=evidence_block,
     )
-    batch = parse_candidates(client.run(agent, prompt), valid_ids or None)
+    batch = parse_candidates(client.run(agent, prompt), valid_ids)
 
     created = linked = skipped = 0
     for c in batch.children:
