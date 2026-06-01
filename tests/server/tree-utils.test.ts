@@ -9,7 +9,7 @@ import type { ChainNode, Company } from "@prisma/client";
 
 // Helper to create mock ChainNode data
 function mockNode(
-  overrides: Partial<ChainNode> & { id: string; name: string }
+  overrides: Partial<ChainNode> & { id: string; name: string; companies?: Company[] }
 ): ChainNode & { companies: Company[] } {
   return {
     id: overrides.id,
@@ -27,6 +27,11 @@ function mockNode(
     valueFlow: overrides.valueFlow ?? null,
     aliases: overrides.aliases ?? [],
     normKey: overrides.normKey ?? "",
+    syncStatus: overrides.syncStatus ?? "CONFIRMED",
+    syncSource: overrides.syncSource ?? "ATLAS_PIPELINE",
+    evidenceGrade: overrides.evidenceGrade ?? null,
+    bottleneckLayer: overrides.bottleneckLayer ?? null,
+    themeIds: overrides.themeIds ?? [],
     createdAt: new Date(),
     updatedAt: new Date(),
     companies: (overrides as any).companies ?? [],
