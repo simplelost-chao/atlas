@@ -184,6 +184,22 @@ model ChainNode {
   parent    ChainNode?    @relation("NodeTree", fields: [parentId], references: [id])
   children  ChainNode[]   @relation("NodeTree")
   companies Company[]
+  companyNodes CompanyNode[]
+}
+
+model CompanyNode {
+  id          String   @id @default(cuid())
+  companyId   String
+  chainNodeId String
+  marketPosition String @default("EMERGING")
+  createdAt   DateTime @default(now())
+
+  company   Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  chainNode ChainNode @relation(fields: [chainNodeId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, chainNodeId])
+  @@index([companyId])
+  @@index([chainNodeId])
 }
 
 enum MarketPosition {
@@ -256,6 +272,7 @@ model Company {
   updatedAt DateTime @updatedAt
 
   chainNode         ChainNode        @relation(fields: [chainNodeId], references: [id], onDelete: Cascade)
+  companyNodes      CompanyNode[]
   supplierRelations SupplyRelation[] @relation("Supplier")
   customerRelations SupplyRelation[] @relation("Customer")
 }

@@ -193,7 +193,7 @@ export const statusRouter = createRouter({
               },
             },
           },
-          orderBy: { liveMarketCap: "desc" },
+          orderBy: [{ liveMarketCap: { sort: "desc", nulls: "last" } }, { name: "asc" }],
           skip: input.page * input.pageSize,
           take: input.pageSize,
         }),
