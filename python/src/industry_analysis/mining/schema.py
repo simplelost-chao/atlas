@@ -33,8 +33,22 @@ def _extract_json(raw: str) -> str:
     raise ParseError("no JSON object found in agent output")
 
 
-def parse_candidates(raw: str) -> CandidateBatch:
+def parse_candidates(raw: str, valid_evidence_ids: set[str] | None = None) -> CandidateBatch:
+    """Parse agent output into a CandidateBatch.
+
+    If valid_evidence_ids is provided, strip any sources[] entries that don't
+    match an injected evidence ID, then downgrade candidates with no remaining
+    valid citations to evidence_grade "E" (unverified).
+    """
     try:
-        return CandidateBatch.model_validate(json.loads(_extract_json(raw)))
+        batch = CandidateBatch.model_validate(json.loads(_extract_json(raw)))
     except (json.JSONDecodeError, ValidationError) as e:
         raise ParseError(str(e)) from e
+
+    if valid_evidence_ids:
+        for child in batch.children:
+            child.sources = [s for s in child.sources if s in valid_evidence_ids]
+            if not child.sources and child.evidence_grade in ("A", "B"):
+                child.evidence_grade = "E"
+
+    return batch

@@ -67,12 +67,23 @@ def node_path(node_id: str):
     typer.echo(" → ".join(n.name_cn for n in reversed(_store().path_to_root(node_id))))
 
 
+def _datasource_db():
+    from industry_analysis.datasource.store.datasource_db import DataSourceDB
+    cfg = get_settings()
+    if cfg.datasource_db_path and cfg.datasource_db_path.exists():
+        return DataSourceDB(cfg.datasource_db_path)
+    return None
+
+
 @app.command()
 def expand(node_id: str, auto_depth: int = 1, json: bool = False):
     s, c = _store(), _client()
-    cfg = get_settings().auto_confirm_grade
-    res = (_batch(s, c, node_id, depth=auto_depth, auto_confirm_grade=cfg) if auto_depth > 1
-           else _expand(s, c, node_id, auto_confirm_grade=cfg))
+    cfg = get_settings()
+    ds = _datasource_db()
+    res = (_batch(s, c, node_id, depth=auto_depth, auto_confirm_grade=cfg.auto_confirm_grade,
+                  datasource_db=ds) if auto_depth > 1
+           else _expand(s, c, node_id, auto_confirm_grade=cfg.auto_confirm_grade,
+                        datasource_db=ds))
     _emit(res, json)
 
 

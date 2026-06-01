@@ -2,6 +2,7 @@ import re
 from industry_analysis.graph.models import EvidenceGrade, Node, NodeStatus, NodeType, normalize
 from industry_analysis.mining.prompt import build_expand_prompt
 from industry_analysis.mining.schema import parse_candidates
+from industry_analysis.mining.evidence_context import gather_evidence, format_evidence_block
 
 _GRADES = ["A", "B", "C", "D", "E"]
 _STRUCTURAL = {NodeType.sub_industry, NodeType.module, NodeType.component}
@@ -18,7 +19,8 @@ def _grade_ok(grade: str | None, threshold: str | None) -> bool:
     return _GRADES.index(grade) <= _GRADES.index(threshold)
 
 
-def expand(store, client, node_id: str, agent: str = "chain-miner", auto_confirm_grade=None) -> dict:
+def expand(store, client, node_id: str, agent: str = "chain-miner",
+           auto_confirm_grade=None, datasource_db=None) -> dict:
     node = store.get_node(node_id)
     if node is None:
         raise ValueError(f"node not found: {node_id}")
@@ -26,8 +28,17 @@ def expand(store, client, node_id: str, agent: str = "chain-miner", auto_confirm
     existing = store.suppliers(node_id)
     existing_keys = {normalize(x) for n in existing for x in n.all_names()}
 
-    prompt = build_expand_prompt(node, store.path_to_root(node_id), [n.name_cn for n in existing])
-    batch = parse_candidates(client.run(agent, prompt))   # ParseError propagates (fail loud)
+    # Gather filing evidence for this node (if datasource available)
+    evidence = gather_evidence(node.all_names(), datasource_db)
+    evidence_block = format_evidence_block(evidence)
+    valid_ids = {e.id for e in evidence}
+
+    prompt = build_expand_prompt(
+        node, store.path_to_root(node_id),
+        [n.name_cn for n in existing],
+        evidence_block=evidence_block,
+    )
+    batch = parse_candidates(client.run(agent, prompt), valid_ids or None)
 
     created = linked = skipped = 0
     for c in batch.children:
@@ -61,7 +72,8 @@ def expand(store, client, node_id: str, agent: str = "chain-miner", auto_confirm
     return {"created": created, "linked": linked, "skipped": skipped}
 
 
-def batch_expand(store, client, node_id: str, depth: int = 1, agent="chain-miner", auto_confirm_grade=None) -> dict:
+def batch_expand(store, client, node_id: str, depth: int = 1, agent="chain-miner",
+                 auto_confirm_grade=None, datasource_db=None) -> dict:
     frontier, totals = [node_id], {"created": 0, "linked": 0, "skipped": 0, "levels": 0}
     for _ in range(depth):
         if not frontier:
@@ -69,7 +81,8 @@ def batch_expand(store, client, node_id: str, depth: int = 1, agent="chain-miner
         next_frontier = []
         for nid in frontier:
             before = {n.id for n in store.suppliers(nid)}
-            r = expand(store, client, nid, agent=agent, auto_confirm_grade=auto_confirm_grade)
+            r = expand(store, client, nid, agent=agent,
+                       auto_confirm_grade=auto_confirm_grade, datasource_db=datasource_db)
             for k in ("created", "linked", "skipped"):
                 totals[k] += r[k]
             next_frontier += [n.id for n in store.suppliers(nid) if n.id not in before]
