@@ -27,6 +27,7 @@ export type ChainSkeleton = z.infer<typeof ChainSkeletonSchema>;
 
 export const SubNodeSchema = z.object({
   name: z.string().describe("子环节名称"),
+  aliases: z.array(z.string()).default([]).describe("别名：中英文、化学式、代号等，用于跨产业链去重"),
   description: z.string().describe("子环节详细描述"),
   nodeType: z
     .enum(["UPSTREAM", "MIDSTREAM", "DOWNSTREAM"])
@@ -56,6 +57,7 @@ export type NodeExpansion = z.infer<typeof NodeExpansionSchema>;
 
 export const DiscoveredCompanySchema = z.object({
   name: z.string().describe("公司名称"),
+  aliases: z.array(z.string()).default([]).describe("别名：中英文名、简称、曾用名，用于去重"),
   ticker: z.string().optional().describe("股票代码"),
   exchange: z.string().optional().describe("交易所"),
   isPublic: z.boolean().describe("是否上市"),

@@ -177,6 +177,9 @@ model ChainNode {
   growthTrend  String?
   keyDrivers   String[] @default([])
   valueFlow    String?
+  // Entity resolution: aliases (CN/EN/code variants) + normalized match key.
+  aliases      String[] @default([])
+  normKey      String   @default("")
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -184,6 +187,8 @@ model ChainNode {
   parent    ChainNode?    @relation("NodeTree", fields: [parentId], references: [id])
   children  ChainNode[]   @relation("NodeTree")
   companies Company[]
+
+  @@index([chainId, normKey])
 }
 
 enum MarketPosition {
@@ -204,6 +209,10 @@ model Company {
   country      String?
   mainBusiness String   @default("")
   coreProducts String[] @default([])
+
+  // Entity resolution: aliases (CN/EN/code variants) + normalized match key.
+  aliases String[] @default([])
+  normKey String   @default("")
 
   marketCap     String?
   revenue       String?
@@ -243,6 +252,9 @@ model Company {
   chainNode         ChainNode        @relation(fields: [chainNodeId], references: [id], onDelete: Cascade)
   supplierRelations SupplyRelation[] @relation("Supplier")
   customerRelations SupplyRelation[] @relation("Customer")
+
+  @@index([ticker])
+  @@index([normKey])
 }
 
 enum RelationType {

@@ -14,6 +14,7 @@ import type { PrismaClient, ChainNode, Company } from "@prisma/client";
 import { generateObjectViaCLI } from "./claude-cli";
 import { CompanyDiscoverySchema } from "./schemas";
 import { getSystemPrompt } from "./prompts";
+import { normalize } from "../lib/normalize";
 import {
   fetchRelatedCompanies,
   fetchQuote,
@@ -361,13 +362,13 @@ export async function discoverCompaniesV2(
 ): Promise<DiscoveryV2Result> {
   const newCompanies: Company[] = [];
 
-  // Get existing companies in this node (to avoid duplicates)
+  // Get existing companies in this node — seed normKey-based dedup sets.
   const existing = await opts.db.company.findMany({
     where: { chainNodeId: opts.node.id },
-    select: { id: true, name: true, ticker: true },
+    select: { id: true, name: true, ticker: true, normKey: true },
   });
-  const existingNames = new Set(existing.map((c) => c.name.toLowerCase()));
-  const existingTickers = new Set(
+  const existingNormKeys = new Set(existing.map((c) => c.normKey || normalize(c.name)));
+  const existingTickers   = new Set(
     existing.filter((c) => c.ticker).map((c) => c.ticker!.toUpperCase())
   );
 
@@ -376,16 +377,18 @@ export async function discoverCompaniesV2(
   let r1Count = 0;
 
   for (const companyData of r1) {
-    const nameKey = companyData.name.toLowerCase();
+    const normKey   = normalize(companyData.name);
     const tickerKey = companyData.ticker?.toUpperCase();
-    if (existingNames.has(nameKey) || (tickerKey && existingTickers.has(tickerKey))) {
-      continue; // Skip duplicates
+    if (existingNormKeys.has(normKey) || (tickerKey && existingTickers.has(tickerKey))) {
+      continue;
     }
 
     const company = await opts.db.company.create({
       data: {
         chainNodeId: opts.node.id,
         name: companyData.name,
+        normKey,
+        aliases: (companyData as any).aliases ?? [],
         ticker: companyData.ticker,
         exchange: companyData.exchange,
         isPublic: companyData.isPublic,
@@ -397,7 +400,7 @@ export async function discoverCompaniesV2(
       },
     });
     newCompanies.push(company);
-    existingNames.add(nameKey);
+    existingNormKeys.add(normKey);
     if (tickerKey) existingTickers.add(tickerKey);
     r1Count++;
   }
@@ -410,18 +413,18 @@ export async function discoverCompaniesV2(
 
   let r2Count = 0;
   for (const related of r2Related) {
-    // Check if already exists
-    if (existingTickers.has(related.symbol.toUpperCase())) continue;
+    const tickerKey = related.symbol.toUpperCase();
+    if (existingTickers.has(tickerKey)) continue;
 
-    // Fetch basic info about this company
     try {
       const quote = await fetchQuote(related.symbol, "");
       if (quote && quote.marketCap && quote.marketCap > 1e8) {
-        // Only add companies with market cap > $100M
+        const normKey = normalize(related.name);
         const company = await opts.db.company.create({
           data: {
             chainNodeId: opts.node.id,
             name: related.name,
+            normKey,
             ticker: related.symbol,
             exchange: "",
             isPublic: true,
@@ -435,7 +438,8 @@ export async function discoverCompaniesV2(
           },
         });
         newCompanies.push(company);
-        existingTickers.add(related.symbol.toUpperCase());
+        existingNormKeys.add(normKey);
+        existingTickers.add(tickerKey);
         r2Count++;
       }
     } catch {
@@ -444,14 +448,14 @@ export async function discoverCompaniesV2(
   }
 
   // ─── Round 3: AI Review ────────────────────────
-  const allNames = [...existingNames].map((n) => n);
-  const r3 = await round3_aiReview(opts, allNames);
+  const existingNamesForPrompt = existing.map((c) => c.name);
+  const r3 = await round3_aiReview(opts, existingNamesForPrompt);
   let r3Count = 0;
 
   for (const companyData of r3) {
-    const nameKey = companyData.name.toLowerCase();
+    const normKey   = normalize(companyData.name);
     const tickerKey = companyData.ticker?.toUpperCase();
-    if (existingNames.has(nameKey) || (tickerKey && existingTickers.has(tickerKey))) {
+    if (existingNormKeys.has(normKey) || (tickerKey && existingTickers.has(tickerKey))) {
       continue;
     }
 
@@ -459,6 +463,8 @@ export async function discoverCompaniesV2(
       data: {
         chainNodeId: opts.node.id,
         name: companyData.name,
+        normKey,
+        aliases: (companyData as any).aliases ?? [],
         ticker: companyData.ticker,
         exchange: companyData.exchange,
         isPublic: companyData.isPublic,
@@ -470,7 +476,7 @@ export async function discoverCompaniesV2(
       },
     });
     newCompanies.push(company);
-    existingNames.add(nameKey);
+    existingNormKeys.add(normKey);
     if (tickerKey) existingTickers.add(tickerKey);
     r3Count++;
   }
