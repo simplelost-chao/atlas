@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="zh">
+<head>
+  <meta charset="utf-8" />
+  <title>IndustryAnalysis · 产业链</title>
+  <script src="https://unpkg.com/cytoscape@3.30.2/dist/cytoscape.min.js"></script>
+  <style>
+    body { margin: 0; font-family: sans-serif; display: flex; height: 100vh; }
+    #cy { flex: 1; height: 100%; }
+    #panel { width: 320px; border-left: 1px solid #ddd; padding: 12px; overflow: auto; }
+    #bar { position: absolute; z-index: 5; padding: 8px; }
+    pre { white-space: pre-wrap; }
+  </style>
+</head>
+<body>
+  <div id="bar">
+    <input id="q" placeholder="搜索..." />
+    <label><input type="checkbox" id="onlyCp" /> 只看瓶颈</label>
+  </div>
+  <div id="cy"></div>
+  <div id="panel"><em>点击节点查看详情</em></div>
+  <script>
+    const COLORS = { theme:'#1f77b4', sub_industry:'#2ca02c', module:'#17becf', component:'#9467bd',
+                     material:'#ff7f0e', precursor:'#d62728', equipment:'#8c564b', company:'#7f7f7f' };
+    let cy;
+    async function load() {
+      const g = await (await fetch('/api/graph')).json();
+      const cps = new Set((await (await fetch('/api/chokepoints')).json()).map(n => n.id));
+      const els = [];
+      for (const n of g.nodes) els.push({ data: { id:n.id, label:n.name_cn, type:n.node_type,
+        cp: cps.has(n.id) ? 1 : 0 } });
+      for (const e of g.edges) els.push({ data: { source:e.upstream_id, target:e.downstream_id } });
+      cy = cytoscape({ container: document.getElementById('cy'), elements: els,
+        layout: { name:'breadthfirst', directed:true },
+        style: [
+          { selector:'node', style:{ 'label':'data(label)', 'background-color': n => COLORS[n.data('type')] || '#999',
+            'width':28, 'height':28, 'font-size':10 } },
+          { selector:'node[cp=1]', style:{ 'border-width':4, 'border-color':'#e6194b' } },
+          { selector:'edge', style:{ 'width':1.5, 'line-color':'#bbb', 'target-arrow-shape':'triangle',
+            'target-arrow-color':'#bbb', 'curve-style':'bezier' } },
+        ]});
+      cy.on('tap', 'node', async ev => {
+        const d = await (await fetch('/api/node/' + ev.target.id())).json();
+        document.getElementById('panel').innerHTML =
+          `<h3>${d.name_cn} / ${d.name_en}</h3><p><b>类型</b>: ${d.node_type} · <b>层</b>: ${d.bottleneck_layer||'-'}</p>`+
+          `<p><b>主题</b>: ${d.theme_ids.join(', ')}</p><p><b>证据</b>: ${d.evidence_grade||'-'} · <b>状态</b>: ${d.status}</p>`+
+          `<p>${d.description||''}</p><pre>${d.evidence_md||''}</pre>`;
+      });
+    }
+    document.getElementById('q').addEventListener('input', e => {
+      const v = e.target.value.trim();
+      cy.nodes().forEach(n => n.style('display',
+        !v || (n.data('label')||'').includes(v) ? 'element' : 'none'));
+    });
+    document.getElementById('onlyCp').addEventListener('change', e => {
+      cy.nodes().forEach(n => n.style('display',
+        !e.target.checked || n.data('cp') ? 'element' : 'none'));
+    });
+    load();
+  </script>
+</body>
+</html>
