@@ -18,6 +18,8 @@ import {
   deepAnalysisPrompt,
   profitChainPrompt,
 } from "./prompts";
+import { normalize } from "../lib/normalize";
+import { findNodeByName, findCompanyByTickerOrName } from "../services/entity-resolution";
 
 export interface PipelineContext {
   db: PrismaClient;
@@ -133,6 +135,7 @@ export async function runSkeletonStep(
       data: {
         chainId: ctx.chainId,
         name: nodeData.name,
+        normKey: normalize(nodeData.name),
         description: nodeData.description,
         nodeType: nodeData.nodeType,
         level: 0,
@@ -181,11 +184,17 @@ export async function runNodeExpansionStep(
 
   const children: ChainNode[] = [];
   for (const subNode of object.subNodes) {
+    // Entity resolution: skip if an equivalent node already exists in this chain.
+    const existing = await findNodeByName(ctx.db, ctx.chainId, subNode.name);
+    if (existing) continue;
+
     const node = await ctx.db.chainNode.create({
       data: {
         chainId: ctx.chainId,
         parentId: parentNode.id,
         name: subNode.name,
+        normKey: normalize(subNode.name),
+        aliases: (subNode as any).aliases ?? [],
         description: subNode.description,
         nodeType: subNode.nodeType,
         level: parentNode.level + 1,
@@ -240,10 +249,28 @@ export async function runCompanyDiscoveryStep(
 
   const companies: Company[] = [];
   for (const companyData of object.companies) {
+    // Entity resolution: skip if this company already exists under this node.
+    const normKey = normalize(companyData.name);
+    const dup = await ctx.db.company.findFirst({
+      where: {
+        chainNodeId: node.id,
+        OR: [
+          { normKey },
+          ...(companyData.ticker
+            ? [{ ticker: { equals: companyData.ticker, mode: "insensitive" as const } }]
+            : []),
+        ],
+      },
+      select: { id: true },
+    });
+    if (dup) continue;
+
     const company = await ctx.db.company.create({
       data: {
         chainNodeId: node.id,
         name: companyData.name,
+        normKey,
+        aliases: (companyData as any).aliases ?? [],
         ticker: companyData.ticker,
         exchange: companyData.exchange,
         isPublic: companyData.isPublic,

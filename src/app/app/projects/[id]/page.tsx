@@ -11,6 +11,41 @@ import type { Company } from "@prisma/client";
 
 type ViewMode = "folder" | "tree";
 
+/** Format live financial data from Yahoo Finance, fallback to AI estimate */
+function liveFinancials(company: any) {
+  const fmt = (v: any, suffix = "") => {
+    if (v == null) return null;
+    const n = Number(v);
+    if (isNaN(n)) return null;
+    const abs = Math.abs(n);
+    const cur = company.liveCurrency ?? "USD";
+    const sym = cur === "CNY" ? "¥" : cur === "HKD" ? "HK$" : cur === "JPY" ? "¥" : cur === "KRW" ? "₩" : cur === "TWD" ? "NT$" : cur === "EUR" ? "€" : cur === "GBP" ? "£" : "$";
+    if (suffix === "%") return `${n.toFixed(1)}%`;
+    if (suffix === "x") return `${n.toFixed(1)}x`;
+    if (abs >= 1e12) return `${sym}${(n / 1e12).toFixed(2)}T`;
+    if (abs >= 1e9) return `${sym}${(n / 1e9).toFixed(1)}B`;
+    if (abs >= 1e8) return `${sym}${(n / 1e8).toFixed(1)}亿`;
+    if (abs >= 1e6) return `${sym}${(n / 1e6).toFixed(0)}M`;
+    return `${sym}${n.toFixed(0)}`;
+  };
+
+  const hasLive = company.liveMarketCap != null;
+
+  return {
+    hasLive,
+    marketCap: hasLive ? fmt(company.liveMarketCap) : company.marketCap,
+    revenue: hasLive ? fmt(company.liveRevenue) : company.revenue,
+    revenueGrowth: hasLive ? fmt(company.liveRevenueGrowth, "%") : company.revenueGrowth,
+    grossMargin: hasLive ? fmt(company.liveGrossMargin, "%") : company.grossMargin,
+    netMargin: hasLive ? fmt(company.liveNetMargin, "%") : company.netMargin,
+    pe: hasLive ? fmt(company.livePeRatio, "x") : null,
+    fwdPe: hasLive ? fmt(company.liveForwardPE, "x") : null,
+    change: hasLive && company.liveChange != null ? `${Number(company.liveChange) >= 0 ? "+" : ""}${Number(company.liveChange).toFixed(2)}%` : null,
+    marketShare: company.marketShare,
+    source: hasLive ? "实时" : "AI估算",
+  };
+}
+
 const POSITION_LABELS: Record<string, string> = {
   LEADER: "龙头",
   CHALLENGER: "挑战者",
@@ -524,37 +559,37 @@ export default function ProjectPage({
                         {/* Main business */}
                         <p className="text-xs text-gray-600 mb-3">{company.mainBusiness}</p>
 
-                        {/* Financials — one per line */}
-                        {(company.marketCap || company.revenue || company.grossMargin) && (
-                          <div className="mb-3 rounded border border-gray-100 divide-y divide-gray-100 text-xs">
-                            {[
-                              { label: "市值", value: company.marketCap },
-                              { label: "营收", value: company.revenue },
-                              { label: "营收增速", value: company.revenueGrowth },
-                              { label: "毛利率", value: company.grossMargin },
-                              { label: "净利率", value: company.netMargin },
-                              { label: "市场份额", value: company.marketShare },
-                            ].filter(f => f.value).map((f) => {
-                              // Split value and annotation (stuff in parentheses)
-                              const match = f.value!.match(/^([^（(]+)([（(].+[）)])?$/);
-                              const mainVal = match ? match[1].trim() : f.value!;
-                              const annotation = match?.[2] ?? null;
-                              return (
-                                <div key={f.label} className="flex justify-between items-center px-3 py-1.5 group">
+                        {/* Financials — live data preferred */}
+                        {(() => {
+                          const fin = liveFinancials(company);
+                          const rows = [
+                            { label: "市值", value: fin.marketCap },
+                            { label: "营收", value: fin.revenue },
+                            { label: "营收增速", value: fin.revenueGrowth },
+                            { label: "毛利率", value: fin.grossMargin },
+                            { label: "净利率", value: fin.netMargin },
+                            ...(fin.hasLive ? [
+                              { label: "PE", value: fin.pe },
+                              { label: "Forward PE", value: fin.fwdPe },
+                              { label: "涨跌", value: fin.change },
+                            ] : []),
+                            { label: "市场份额", value: fin.marketShare },
+                          ].filter(f => f.value);
+                          if (rows.length === 0) return null;
+                          return (
+                            <div className="mb-3 rounded border border-gray-100 divide-y divide-gray-100 text-xs">
+                              {rows.map((f) => (
+                                <div key={f.label} className="flex justify-between items-center px-3 py-1.5">
                                   <span className="text-gray-400">{f.label}</span>
-                                  <span className="flex items-center gap-1">
-                                    <span className="font-medium text-gray-900">{mainVal}</span>
-                                    {annotation && (
-                                      <span className="relative">
-                                        <span className="cursor-help text-gray-300 hover:text-gray-500 text-xs" title={annotation}>?</span>
-                                      </span>
-                                    )}
-                                  </span>
+                                  <span className="font-medium text-gray-900">{f.value}</span>
                                 </div>
-                              );
-                            })}
-                          </div>
-                        )}
+                              ))}
+                              <div className="flex justify-end px-3 py-1 text-[10px] text-gray-300">
+                                {fin.source}
+                              </div>
+                            </div>
+                          );
+                        })()}
 
                         {/* Moat — structured if has numbered points */}
                         {company.moat && (

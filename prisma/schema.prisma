@@ -177,13 +177,34 @@ model ChainNode {
   growthTrend  String?
   keyDrivers   String[] @default([])
   valueFlow    String?
+  // Entity resolution: aliases (CN/EN/code variants) + normalized match key.
+  aliases      String[] @default([])
+  normKey      String   @default("")
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
   chain     IndustryChain @relation(fields: [chainId], references: [id], onDelete: Cascade)
   parent    ChainNode?    @relation("NodeTree", fields: [parentId], references: [id])
   children  ChainNode[]   @relation("NodeTree")
-  companies Company[]
+  companies    Company[]
+  companyNodes CompanyNode[]
+
+  @@index([chainId, normKey])
+}
+
+model CompanyNode {
+  id             String   @id @default(cuid())
+  companyId      String
+  chainNodeId    String
+  marketPosition String   @default("EMERGING")
+  createdAt      DateTime @default(now())
+
+  company   Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  chainNode ChainNode @relation(fields: [chainNodeId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, chainNodeId])
+  @@index([companyId])
+  @@index([chainNodeId])
 }
 
 enum MarketPosition {
@@ -204,6 +225,10 @@ model Company {
   country      String?
   mainBusiness String   @default("")
   coreProducts String[] @default([])
+
+  // Entity resolution: aliases (CN/EN/code variants) + normalized match key.
+  aliases String[] @default([])
+  normKey String   @default("")
 
   marketCap     String?
   revenue       String?
@@ -235,14 +260,33 @@ model Company {
   livePeRatio      Decimal? @db.Decimal(10, 2)
   liveChange       Decimal? @db.Decimal(8, 4)
   liveCurrency     String?
+  liveOperatingMargin Decimal? @db.Decimal(8, 2)
+  liveEbitda       BigInt?
+  liveFreeCashflow BigInt?
+  liveOperatingCashflow BigInt?
+  liveTotalCash    BigInt?
+  liveTotalDebt    BigInt?
+  liveDebtToEquity Decimal? @db.Decimal(8, 2)
+  liveCurrentRatio Decimal? @db.Decimal(8, 2)
+  liveForwardPE    Decimal? @db.Decimal(10, 2)
+  livePriceToBook  Decimal? @db.Decimal(10, 2)
+  liveEnterpriseValue BigInt?
+  liveEps          Decimal? @db.Decimal(12, 4)
+  liveBeta         Decimal? @db.Decimal(6, 3)
+  livePegRatio     Decimal? @db.Decimal(8, 2)
+  liveSharesOutstanding BigInt?
   liveUpdatedAt    DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   chainNode         ChainNode        @relation(fields: [chainNodeId], references: [id], onDelete: Cascade)
+  companyNodes      CompanyNode[]
   supplierRelations SupplyRelation[] @relation("Supplier")
   customerRelations SupplyRelation[] @relation("Customer")
+
+  @@index([ticker])
+  @@index([normKey])
 }
 
 enum RelationType {
