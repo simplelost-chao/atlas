@@ -50,7 +50,14 @@ def expand(store, client, node_id: str, agent: str = "chain-miner",
             continue
         match = next(filter(None, (store.find_by_name(x) for x in names)), None)
         if match:                                  # cross-theme link
-            store.add_edge(match.id, node_id, c.relation_rationale)
+            if match.id == node_id:                # self-loop: LLM echoed parent
+                skipped += 1
+                continue
+            try:
+                store.add_edge(match.id, node_id, c.relation_rationale)
+            except Exception:
+                skipped += 1
+                continue
             for t in node.theme_ids:
                 store.add_theme_to_node(match.id, t)
             store.log("link", match.id, f"under {node_id}")
