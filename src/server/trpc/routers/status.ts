@@ -151,4 +151,90 @@ export const statusRouter = createRouter({
 
       return { industries: results, analysisProgress, recentLogs, logTotalCount };
     }),
+
+  companyData: protectedProcedure
+    .input(z.object({
+      teamId: z.string(),
+      page: z.number().default(0),
+      pageSize: z.number().default(30),
+      industry: z.string().default("all"),
+      source: z.string().default("all"),
+    }))
+    .query(async ({ ctx, input }) => {
+      const where: any = {
+        chainNode: { chain: { status: "COMPLETED" } },
+      };
+
+      if (input.industry !== "all") {
+        where.chainNode = { chain: { status: "COMPLETED", project: { industry: input.industry } } };
+      }
+
+      if (input.source === "live") {
+        where.liveMarketCap = { not: null };
+      } else if (input.source === "ai") {
+        where.liveMarketCap = null;
+        where.isPublic = true;
+      }
+
+      const [companies, total] = await Promise.all([
+        ctx.db.company.findMany({
+          where,
+          select: {
+            id: true, name: true, ticker: true, exchange: true,
+            marketCap: true, revenue: true, revenueGrowth: true,
+            grossMargin: true, netMargin: true, marketPosition: true,
+            liveMarketCap: true, liveRevenue: true, liveRevenueGrowth: true,
+            liveGrossMargin: true, liveNetMargin: true, livePeRatio: true,
+            liveForwardPE: true, liveChange: true, liveCurrency: true,
+            liveUpdatedAt: true,
+            chainNode: {
+              select: {
+                chain: { select: { project: { select: { industry: true } } } },
+              },
+            },
+          },
+          orderBy: { liveMarketCap: "desc" },
+          skip: input.page * input.pageSize,
+          take: input.pageSize,
+        }),
+        ctx.db.company.count({ where }),
+      ]);
+
+      // Stats
+      const [totalCompanies, withLiveData, withMoat] = await Promise.all([
+        ctx.db.company.count({ where: { chainNode: { chain: { status: "COMPLETED" } } } }),
+        ctx.db.company.count({ where: { chainNode: { chain: { status: "COMPLETED" } }, liveMarketCap: { not: null } } }),
+        ctx.db.company.count({ where: { chainNode: { chain: { status: "COMPLETED" } }, moat: { not: null } } }),
+      ]);
+
+      const industries = await ctx.db.$queryRaw<Array<{ industry: string }>>`
+        SELECT DISTINCT p.industry FROM "Project" p
+        JOIN "IndustryChain" ic ON ic."projectId" = p.id
+        WHERE ic.status = 'COMPLETED'
+        ORDER BY p.industry
+      `;
+
+      return {
+        companies: companies.map((c) => ({
+          ...c,
+          industry: c.chainNode?.chain?.project?.industry ?? "",
+          liveMarketCap: c.liveMarketCap?.toString() ?? null,
+          liveRevenue: c.liveRevenue?.toString() ?? null,
+          liveRevenueGrowth: c.liveRevenueGrowth?.toString() ?? null,
+          liveGrossMargin: c.liveGrossMargin?.toString() ?? null,
+          liveNetMargin: c.liveNetMargin?.toString() ?? null,
+          livePeRatio: c.livePeRatio?.toString() ?? null,
+          liveForwardPE: c.liveForwardPE?.toString() ?? null,
+          liveChange: c.liveChange?.toString() ?? null,
+        })),
+        total,
+        stats: {
+          totalCompanies,
+          withLiveData,
+          withoutLiveData: totalCompanies - withLiveData,
+          withMoat,
+          industries: industries.map((i) => i.industry),
+        },
+      };
+    }),
 });

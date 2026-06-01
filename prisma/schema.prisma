@@ -235,6 +235,21 @@ model Company {
   livePeRatio      Decimal? @db.Decimal(10, 2)
   liveChange       Decimal? @db.Decimal(8, 4)
   liveCurrency     String?
+  liveOperatingMargin Decimal? @db.Decimal(8, 2)
+  liveEbitda       BigInt?
+  liveFreeCashflow BigInt?
+  liveOperatingCashflow BigInt?
+  liveTotalCash    BigInt?
+  liveTotalDebt    BigInt?
+  liveDebtToEquity Decimal? @db.Decimal(8, 2)
+  liveCurrentRatio Decimal? @db.Decimal(8, 2)
+  liveForwardPE    Decimal? @db.Decimal(10, 2)
+  livePriceToBook  Decimal? @db.Decimal(10, 2)
+  liveEnterpriseValue BigInt?
+  liveEps          Decimal? @db.Decimal(12, 4)
+  liveBeta         Decimal? @db.Decimal(6, 3)
+  livePegRatio     Decimal? @db.Decimal(8, 2)
+  liveSharesOutstanding BigInt?
   liveUpdatedAt    DateTime?
 
   createdAt DateTime @default(now())
