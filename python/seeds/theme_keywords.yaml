@@ -1,0 +1,88 @@
+# Per-theme keywords for cn-extract --theme
+# Bump extractor_version in cn_extract.py when you modify these.
+
+robotics:
+  - 谐波减速器
+  - RV减速器
+  - 伺服电机
+  - 工业机器人
+  - 关节模组
+  - 力矩传感器
+  - 精密轴承
+  - 协作机器人
+
+ai-infrastructure:
+  - HBM
+  - CoWoS
+  - 算力
+  - 液冷
+  - 数据中心
+  - 服务器
+  - 交换机
+  - 光模块
+  - 高速铜缆
+
+autonomous-vehicles:
+  - 激光雷达
+  - 毫米波雷达
+  - 自动驾驶
+  - 域控制器
+  - 线控底盘
+  - 智能座舱
+
+autonomous-logistics:
+  - AMR
+  - AGV
+  - 仓储机器人
+  - 分拣系统
+  - 立体仓库
+
+reusable-rockets:
+  - 液氧甲烷
+  - 火箭发动机
+  - 碳纤维复合材料
+  - 涡轮泵
+  - 推力矢量
+
+distributed-energy:
+  - 储能
+  - 碳化硅
+  - 逆变器
+  - 光伏组件
+  - 电芯
+  - 固态电池
+
+ai-consumer-os:
+  - 端侧AI
+  - NPU
+  - 小模型
+  - 边缘计算
+  - 语音芯片
+
+ai-productivity:
+  - 大模型
+  - RAG
+  - Agent
+  - 向量数据库
+  - GPU集群
+
+multiomics:
+  - 基因测序
+  - 质谱仪
+  - 液体活检
+  - 蛋白质组学
+  - 单细胞
+
+great-acceleration:
+  - 人形机器人
+  - 通用人工智能
+  - AGI
+  - 脑机接口
+
+mlcc:
+  - MLCC
+  - 积层陶瓷电容
+  - 钛酸钡
+  - 镍粉
+  - 草酸钡
+  - 流延成型
