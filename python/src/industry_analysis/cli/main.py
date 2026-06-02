@@ -23,7 +23,7 @@ app.add_typer(news_app, name="news")
 
 
 def _store() -> GraphStore:
-    return GraphStore(get_settings().db_path)
+    return GraphStore(get_settings().resolved_db_path())
 
 
 def _client() -> QuantAgentClient:
@@ -74,8 +74,9 @@ def node_path(node_id: str):
 def _datasource_db():
     from industry_analysis.datasource.store.datasource_db import DataSourceDB
     cfg = get_settings()
-    if cfg.datasource_db_path and cfg.datasource_db_path.exists():
-        return DataSourceDB(cfg.datasource_db_path)
+    p = cfg.resolved_datasource_db()
+    if p:
+        return DataSourceDB(p)
     return None
 
 
@@ -177,7 +178,7 @@ def graph_sync(
 
 def _qstore():
     from industry_analysis.queue.store import QueueStore
-    return QueueStore(get_settings().db_path)
+    return QueueStore(get_settings().resolved_db_path())
 
 
 @queue_app.command("add")
@@ -356,7 +357,7 @@ def news_scan(
 
     # Add to queue — keep QuantAgent's score if already set (>0),
     # only use our scorer to boost graph_gap dimension for new nodes
-    qs = QueueStore(get_settings().db_path)
+    qs = QueueStore(get_settings().resolved_db_path())
     existing = {n.id for n in _store().list_nodes()}
     added = 0
     for task in result.tasks:

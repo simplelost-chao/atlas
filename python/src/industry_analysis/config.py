@@ -15,24 +15,61 @@ def _default_quantagent_cli() -> str:
     for p in candidates:
         if p.exists():
             return str(p)
-    return str(candidates[0])  # return best guess even if missing (env var overrides)
+    return str(candidates[0])
 
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="IA_", env_file=".env", extra="ignore")
 
-    db_path: Path = Path("data/graph.db")
+    # ── Data root ───────────────────────────────────────────────────────────
+    # Set IA_DATA_ROOT to relocate all data off OneDrive / onto a fast drive.
+    # Default: atlas-work/python/data/ (in-repo, for dev/CI use).
+    # Production example: IA_DATA_ROOT=D:/quantdata/atlas
+    data_root: Path = _PYTHON_ROOT / "data"
+
+    # ── Derived paths (all relative to data_root unless explicitly overridden)
+    # Override individually via IA_DB_PATH, IA_DATASOURCE_DB_PATH etc.
+    db_path: Path | None = None           # graph.db + queue
+    datasource_db_path: Path | None = None  # datasource.db (FTS + mentions)
+    cn_filings_db_path: Path | None = None  # external A-share filings (read-only)
+    us_filings_db_path: Path | None = None  # US 10-K filings cache
+
+    # ── QuantAgent ──────────────────────────────────────────────────────────
     quantagent_cli: str = _default_quantagent_cli()
-    # agents dir: relative to python/ root so it works regardless of CWD
     quantagent_agents_dir: str = str(_PYTHON_ROOT / ".quantagent" / "agents")
     node_path: str = "node"
     quantagent_timeout: int = 600
-    dashboard_port: int = 8300
+
+    # ── Mining ──────────────────────────────────────────────────────────────
     auto_confirm_grade: str | None = None
-    # Optional datasource DB path for evidence grounding in expand prompts
-    datasource_db_path: Path | None = None
-    # Atlas Postgres URL for ia sync  (e.g. postgresql://user:pass@host/db)
+    dashboard_port: int = 8300
+
+    # ── Atlas Postgres ──────────────────────────────────────────────────────
     atlas_db_url: str | None = None
+
+    # ── Resolved path helpers ───────────────────────────────────────────────
+
+    def resolved_db_path(self) -> Path:
+        return self.db_path or (self.data_root / "graph" / "graph.db")
+
+    def resolved_datasource_db(self) -> Path | None:
+        if self.datasource_db_path:
+            return self.datasource_db_path
+        p = self.data_root / "datasource" / "datasource.db"
+        return p if p.exists() else None
+
+    def resolved_cn_filings_db(self) -> Path | None:
+        if self.cn_filings_db_path:
+            return self.cn_filings_db_path
+        # Check standard quantdata location first
+        default = Path("D:/quantdata/markets/CN/filings.db")
+        if default.exists():
+            return default
+        p = self.data_root / "datasource" / "CN" / "filings.db"
+        return p if p.exists() else None
+
+    def resolved_us_filings_db(self) -> Path:
+        return self.us_filings_db_path or (self.data_root / "datasource" / "US" / "filings.db")
 
 
 def get_settings() -> Settings:

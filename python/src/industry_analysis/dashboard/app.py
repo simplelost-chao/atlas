@@ -9,7 +9,7 @@ _STATIC = Path(__file__).parent / "static"
 
 
 def create_app(db_path=None) -> FastAPI:
-    db = db_path or get_settings().db_path
+    db = db_path or get_settings().resolved_db_path()
     app = FastAPI(title="IndustryAnalysis")
 
     def store():
