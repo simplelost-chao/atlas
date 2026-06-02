@@ -158,6 +158,8 @@ class DataSourceDB:
             conn.commit()
 
     def search(self, keyword: str, limit: int = 20) -> list[SearchResult]:
+        # Wrap in FTS5 phrase quotes so special chars (&, -, +, *) are literals.
+        fts_query = '"' + keyword.replace('"', '""') + '"'
         sql = """SELECT f.id AS filing_id, f.company_id, f.filer_name,
                         s.section_path,
                         snippet(search_fts, 3, '[', ']', '...', 64) AS snippet
@@ -167,7 +169,7 @@ class DataSourceDB:
                  ORDER BY rank
                  LIMIT ?"""
         with closing(self._conn()) as conn:
-            rows = conn.execute(sql, (keyword, limit)).fetchall()
+            rows = conn.execute(sql, (fts_query, limit)).fetchall()
         return [SearchResult(
             filing_id=r["filing_id"], company_id=r["company_id"],
             filer_name=r["filer_name"], section_path=r["section_path"],

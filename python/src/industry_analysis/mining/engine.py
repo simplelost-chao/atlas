@@ -1,5 +1,6 @@
 import re
 from industry_analysis.graph.models import EvidenceGrade, Node, NodeStatus, NodeType, normalize
+from industry_analysis.graph.store import CycleError
 from industry_analysis.mining.prompt import build_expand_prompt
 from industry_analysis.mining.schema import parse_candidates
 from industry_analysis.mining.evidence_context import gather_evidence, format_evidence_block
@@ -50,7 +51,11 @@ def expand(store, client, node_id: str, agent: str = "chain-miner",
             continue
         match = next(filter(None, (store.find_by_name(x) for x in names)), None)
         if match:                                  # cross-theme link
-            store.add_edge(match.id, node_id, c.relation_rationale)
+            try:
+                store.add_edge(match.id, node_id, c.relation_rationale)
+            except CycleError:
+                skipped += 1
+                continue
             for t in node.theme_ids:
                 store.add_theme_to_node(match.id, t)
             store.log("link", match.id, f"under {node_id}")
