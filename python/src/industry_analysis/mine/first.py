@@ -46,13 +46,16 @@ def mine_first(store, client, extractor: CnExtractor, theme_id: str,
     # Step 2: deep expand
     from ..config import get_settings
     cfg = get_settings()
-    expand_result = batch_expand(
-        store, client, theme_id, depth=depth,
-        auto_confirm_grade=cfg.auto_confirm_grade,
-        datasource_db=extractor.ds,
-    )
-    result.nodes_created = expand_result.get("created", 0)
-    result.nodes_linked = expand_result.get("linked", 0)
+    try:
+        expand_result = batch_expand(
+            store, client, theme_id, depth=depth,
+            auto_confirm_grade=cfg.auto_confirm_grade,
+            datasource_db=extractor.ds,
+        )
+        result.nodes_created = expand_result.get("created", 0)
+        result.nodes_linked = expand_result.get("linked", 0)
+    except Exception as e:
+        result.errors.append(f"batch_expand failed: {e}")
 
     # Step 3: fetch evidence for company nodes discovered during expand
     company_nodes = [
