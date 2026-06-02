@@ -469,5 +469,30 @@ def mine_first_cmd(
         typer.echo(f"  ERROR: {e}", err=True)
 
 
+@mine_app.command("update")
+def mine_update_cmd(
+    theme: Optional[str] = typer.Option(None, "--theme",
+        help="Theme ID or 'all'"),
+    since: Optional[str] = typer.Option(None, "--since",
+        help="ISO date filter (reserved for future use)"),
+):
+    """Incremental update: re-score nodes (C) + expand leaf nodes (A)."""
+    from industry_analysis.mine.update import mine_update
+
+    cfg = get_settings()
+    cn_db = cfg.resolved_cn_filings_db()
+    if cn_db is None:
+        typer.echo("CN filings database not configured", err=True)
+        raise typer.Exit(1)
+    ds = _datasource_db()
+    s, c = _store(), _client()
+
+    theme_ids = None if (theme is None or theme == "all") else [theme]
+    result = mine_update(s, c, ds, str(cn_db), theme_ids=theme_ids)
+    typer.echo(result.summary())
+    for e in result.errors:
+        typer.echo(f"  ERROR: {e}", err=True)
+
+
 if __name__ == "__main__":
     app()
