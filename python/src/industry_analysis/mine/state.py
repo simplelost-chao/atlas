@@ -36,7 +36,7 @@ def get_theme_state(store: GraphStore, theme_id: str) -> ThemeState:
 def _load_keywords(theme_id: str) -> list[str]:
     """Load theme keywords from seeds/theme_keywords.yaml."""
     import yaml
-    seeds = Path(__file__).parents[4] / "seeds" / "theme_keywords.yaml"
+    seeds = Path(__file__).parents[3] / "seeds" / "theme_keywords.yaml"
     if not seeds.exists():
         return []
     data = yaml.safe_load(seeds.read_text(encoding="utf-8"))

@@ -42,7 +42,10 @@ def datasource_cn_extract(
         raise typer.Exit(1)
 
     cfg = get_settings()
-    cn_db = cfg.cn_filings_db_path or Path("D:/quantdata/markets/CN/filings.db")
+    cn_db = cfg.resolved_cn_filings_db()
+    if cn_db is None:
+        typer.echo("CN filings database not configured", err=True)
+        raise typer.Exit(1)
     ds = _datasource_db()
     if ds is None:
         typer.echo("datasource_db not configured", err=True)
@@ -57,7 +60,7 @@ def datasource_cn_extract(
     if symbol:
         result = extractor.extract_by_symbol(symbol)
     else:
-        seeds_path = Path(__file__).parents[4] / "seeds" / "theme_keywords.yaml"
+        seeds_path = Path(__file__).parents[3] / "seeds" / "theme_keywords.yaml"
         data = yaml.safe_load(seeds_path.read_text(encoding="utf-8"))
         keywords = data.get(theme, [])
         if not keywords:
