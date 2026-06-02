@@ -38,20 +38,28 @@ def fetch(
             t = yf.Ticker(ticker)
             news_items = t.news or []
             for item in news_items[:max_per_ticker]:
-                url = item.get("link", "") or item.get("url", "")
+                # yfinance v0.2+ new structure: item = {id, content: {title, description, pubDate, provider, canonicalUrl}}
+                content = item.get("content") or item
+                title = content.get("title", "") or item.get("title", "")
+                if not title:
+                    continue
+                url = (content.get("canonicalUrl") or {}).get("url", "") or \
+                      content.get("clickThroughUrl", {}).get("url", "") or \
+                      item.get("link", "")
                 if url in seen:
                     continue
                 seen.add(url)
-                title = item.get("title", "")
-                if not title:
-                    continue
-                pub = item.get("providerPublishTime", 0)
-                pub_str = str(pub) if pub else ""
+                provider = (content.get("provider") or {}).get("displayName", "Yahoo Finance")
+                pub = content.get("pubDate", "") or str(item.get("providerPublishTime", ""))
+                body = content.get("summary", "") or content.get("description", "") or title
+                # Strip HTML tags from description
+                import re
+                body = re.sub(r"<[^>]+>", "", body)
                 articles.append(NewsArticle(
                     title=title,
-                    content=item.get("summary", "") or title,
-                    source=item.get("publisher", "Yahoo Finance"),
-                    published_at=pub_str,
+                    content=body[:500],
+                    source=provider,
+                    published_at=pub,
                     url=url,
                     language="en",
                     tags=[ticker],

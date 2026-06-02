@@ -354,12 +354,19 @@ def news_scan(
             typer.echo(f"  [DRY] score={t.priority_score} | {t.trigger_summary[:60]} → {t.root_node}")
         return
 
-    # Add to queue
+    # Add to queue — keep QuantAgent's score if already set (>0),
+    # only use our scorer to boost graph_gap dimension for new nodes
     qs = QueueStore(get_settings().db_path)
     existing = {n.id for n in _store().list_nodes()}
     added = 0
     for task in result.tasks:
-        task.priority_score = compute_score(task, existing)
+        if task.priority_score <= 0:
+            task.priority_score = compute_score(task, existing)
+        else:
+            # Boost by graph_gap: +5 if node is genuinely new to our DAG
+            from industry_analysis.graph.models import normalize
+            if normalize(task.root_node) not in existing:
+                task.priority_score = min(100, task.priority_score + 5)
         qs.add(task)
         added += 1
 

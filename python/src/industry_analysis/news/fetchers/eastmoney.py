@@ -107,8 +107,8 @@ def fetch_announcements(
             time.sleep(0.5)
             params = {
                 "sr": -1,
-                "pageSize": 10,
-                "page": 1,
+                "page_size": 10,
+                "page_index": 1,
                 "column": "szse,sse",
                 "tabName": "fulltext",
                 "searchKey": kw,
