@@ -84,8 +84,9 @@ class CnExtractor:
         if not keywords:
             return result
 
-        kw_filter = " OR ".join(f"s.content LIKE '%{k}%'" for k in keywords)
-        placeholders = ",".join("?" * len(doc_types))
+        kw_clauses = " OR ".join("s.content LIKE ?" for _ in keywords)
+        kw_params = [f"%{k}%" for k in keywords]
+        doc_placeholders = ",".join("?" * len(doc_types))
 
         with closing(self._cn_conn()) as conn:
             doc_ids = conn.execute(
@@ -93,10 +94,10 @@ class CnExtractor:
                            d.period_end, d.content_hash
                     FROM sections s
                     JOIN documents d ON d.id = s.document_id
-                    WHERE ({kw_filter})
+                    WHERE ({kw_clauses})
                       AND d.parse_status='success'
-                      AND d.doc_type IN ({placeholders})""",
-                list(doc_types),
+                      AND d.doc_type IN ({doc_placeholders})""",
+                kw_params + list(doc_types),
             ).fetchall()
             for doc in doc_ids:
                 r = self._process_doc(conn, dict(doc))
@@ -136,7 +137,6 @@ class CnExtractor:
         ))
 
         indexed = 0
-        section_seqs = {s["section_seq"] for s in sections}
         for sec in sections:
             snippet = self._build_snippet(cn_conn, doc_id, sec["section_seq"])
             self.ds.fts_index(filing_id, doc["symbol"],
