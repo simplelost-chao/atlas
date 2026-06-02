@@ -57,6 +57,15 @@ CREATE VIRTUAL TABLE IF NOT EXISTS search_fts USING fts5(
     content,
     tokenize = 'trigram'
 );
+
+CREATE TABLE IF NOT EXISTS extract_log (
+    document_id       TEXT NOT NULL,
+    extractor_version TEXT NOT NULL,
+    content_hash      TEXT NOT NULL,
+    sections_extracted INTEGER DEFAULT 0,
+    extracted_at      TEXT NOT NULL DEFAULT (datetime('now')),
+    PRIMARY KEY (document_id, extractor_version)
+);
 """
 
 
@@ -156,6 +165,46 @@ class DataSourceDB:
                 (filing_id, company_id, section_path, content),
             )
             conn.commit()
+
+    def is_extracted(self, document_id: str, content_hash: str,
+                     extractor_version: str) -> bool:
+        with closing(self._conn()) as conn:
+            row = conn.execute(
+                "SELECT 1 FROM extract_log "
+                "WHERE document_id=? AND extractor_version=? AND content_hash=?",
+                (document_id, extractor_version, content_hash),
+            ).fetchone()
+        return row is not None
+
+    def mark_extracted(self, document_id: str, content_hash: str,
+                       extractor_version: str, sections_count: int = 0) -> None:
+        with closing(self._conn()) as conn:
+            conn.execute(
+                """INSERT OR REPLACE INTO extract_log
+                   (document_id, extractor_version, content_hash, sections_extracted)
+                   VALUES (?,?,?,?)""",
+                (document_id, extractor_version, content_hash, sections_count),
+            )
+            conn.commit()
+
+    def get_unextracted_docs(self, cn_conn: "sqlite3.Connection",
+                             extractor_version: str,
+                             doc_types: tuple = ("annual", "semi-annual", "prospectus"),
+                             ) -> list[dict]:
+        """Return documents from CN filings.db not yet indexed with this version."""
+        placeholders = ",".join("?" * len(doc_types))
+        rows = cn_conn.execute(
+            f"""SELECT id, symbol, doc_type, period_end, content_hash
+                FROM documents
+                WHERE parse_status='success'
+                  AND doc_type IN ({placeholders})""",
+            list(doc_types),
+        ).fetchall()
+        result = []
+        for r in rows:
+            if not self.is_extracted(r["id"], r["content_hash"], extractor_version):
+                result.append(dict(r))
+        return result
 
     def search(self, keyword: str, limit: int = 20) -> list[SearchResult]:
         # Wrap in FTS5 phrase quotes so special chars (&, -, +, *) are literals.

@@ -80,3 +80,29 @@ def test_fts_supply_chain_keyword(db):
                  "第三节/供应商",
                  "主要供应商包括绿的谐波技术有限公司，提供谐波减速器零部件")
     assert len(db.search("谐波减速器")) >= 1
+
+
+def test_is_extracted_returns_false_when_not_logged(db):
+    assert db.is_extracted("doc1", "hash1", "v1") is False
+
+
+def test_mark_and_check_extracted(db):
+    db.mark_extracted("doc1", "hash1", "v1", sections_count=5)
+    assert db.is_extracted("doc1", "hash1", "v1") is True
+
+
+def test_different_hash_not_extracted(db):
+    db.mark_extracted("doc1", "hash1", "v1")
+    assert db.is_extracted("doc1", "hash2", "v1") is False
+
+
+def test_different_version_not_extracted(db):
+    db.mark_extracted("doc1", "hash1", "v1")
+    assert db.is_extracted("doc1", "hash1", "v2") is False
+
+
+def test_mark_extracted_upserts(db):
+    db.mark_extracted("doc1", "hash1", "v1", sections_count=3)
+    db.mark_extracted("doc1", "hash2", "v1", sections_count=7)  # hash changed
+    assert db.is_extracted("doc1", "hash2", "v1") is True
+    assert db.is_extracted("doc1", "hash1", "v1") is False
