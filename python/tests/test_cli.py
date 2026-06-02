@@ -20,3 +20,9 @@ def test_chokepoints_empty(tmp_path, monkeypatch):
     runner.invoke(app, ["theme", "load"])
     res = runner.invoke(app, ["chokepoints", "--json"])
     assert json.loads(res.stdout) == []
+
+def test_datasource_cn_extract_help():
+    result = runner.invoke(app, ["datasource", "cn-extract", "--help"])
+    assert result.exit_code == 0
+    assert "--symbol" in result.output
+    assert "--theme" in result.output

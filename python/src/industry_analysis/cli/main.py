@@ -15,11 +15,63 @@ node_app = typer.Typer()
 review_app = typer.Typer()
 queue_app = typer.Typer()
 news_app = typer.Typer()
+datasource_app = typer.Typer()
+mine_app = typer.Typer()
 app.add_typer(theme_app, name="theme")
 app.add_typer(node_app, name="node")
 app.add_typer(review_app, name="review")
 app.add_typer(queue_app, name="queue")
 app.add_typer(news_app, name="news")
+app.add_typer(datasource_app, name="datasource")
+app.add_typer(mine_app, name="mine")
+
+
+@datasource_app.command("cn-extract")
+def datasource_cn_extract(
+    symbol: Optional[str] = typer.Option(None, "--symbol", help="A-share ticker, e.g. 300677.SZ"),
+    theme: Optional[str] = typer.Option(None, "--theme", help="Theme ID from theme_keywords.yaml"),
+    dry_run: bool = typer.Option(False, "--dry-run"),
+):
+    """Extract supply-chain evidence from CN filings.db into datasource.db."""
+    import yaml
+    from pathlib import Path
+    from industry_analysis.datasource.cn_extract import CnExtractor
+
+    if not symbol and not theme:
+        typer.echo("Provide --symbol or --theme", err=True)
+        raise typer.Exit(1)
+
+    cfg = get_settings()
+    cn_db = cfg.cn_filings_db_path or Path("D:/quantdata/markets/CN/filings.db")
+    ds = _datasource_db()
+    if ds is None:
+        typer.echo("datasource_db not configured", err=True)
+        raise typer.Exit(1)
+
+    extractor = CnExtractor(str(cn_db), ds)
+
+    if dry_run:
+        typer.echo(f"[dry-run] cn-extract {'--symbol ' + symbol if symbol else '--theme ' + theme}")
+        return
+
+    if symbol:
+        result = extractor.extract_by_symbol(symbol)
+    else:
+        seeds_path = Path(__file__).parents[4] / "seeds" / "theme_keywords.yaml"
+        data = yaml.safe_load(seeds_path.read_text(encoding="utf-8"))
+        keywords = data.get(theme, [])
+        if not keywords:
+            typer.echo(f"No keywords found for theme '{theme}'", err=True)
+            raise typer.Exit(1)
+        result = extractor.extract_by_theme(keywords)
+
+    typer.echo(
+        f"cn-extract done: processed={result.docs_processed} "
+        f"skipped={result.docs_skipped} sections={result.sections_indexed}"
+    )
+    if result.errors:
+        for e in result.errors:
+            typer.echo(f"  ERROR: {e}", err=True)
 
 
 def _store() -> GraphStore:
