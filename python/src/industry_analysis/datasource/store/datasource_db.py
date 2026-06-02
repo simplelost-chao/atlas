@@ -192,6 +192,7 @@ class DataSourceDB:
                              doc_types: tuple = ("annual", "semi-annual", "prospectus"),
                              ) -> list[dict]:
         """Return documents from CN filings.db not yet indexed with this version."""
+        cn_conn.row_factory = sqlite3.Row
         placeholders = ",".join("?" * len(doc_types))
         rows = cn_conn.execute(
             f"""SELECT id, symbol, doc_type, period_end, content_hash

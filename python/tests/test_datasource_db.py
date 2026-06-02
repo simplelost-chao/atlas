@@ -106,3 +106,33 @@ def test_mark_extracted_upserts(db):
     db.mark_extracted("doc1", "hash2", "v1", sections_count=7)  # hash changed
     assert db.is_extracted("doc1", "hash2", "v1") is True
     assert db.is_extracted("doc1", "hash1", "v1") is False
+
+
+def test_get_unextracted_docs_filters_already_indexed(db, tmp_path):
+    import sqlite3 as _sqlite3
+    # Create a minimal CN filings.db with 2 documents
+    cn_path = tmp_path / "cn.db"
+    cn_conn = _sqlite3.connect(str(cn_path))
+    cn_conn.executescript("""
+        CREATE TABLE documents (
+            id TEXT, symbol TEXT, doc_type TEXT,
+            period_end TEXT, content_hash TEXT, parse_status TEXT
+        );
+        INSERT INTO documents VALUES ('d1','SYM.SZ','annual','2025-12-31','h1','success');
+        INSERT INTO documents VALUES ('d2','SYM.SZ','annual','2024-12-31','h2','success');
+    """)
+    cn_conn.commit()
+
+    # Initially both are unextracted
+    unextracted = db.get_unextracted_docs(cn_conn, "v1")
+    assert len(unextracted) == 2
+
+    # Mark d1 as extracted
+    db.mark_extracted("d1", "h1", "v1")
+
+    # Only d2 should remain
+    unextracted2 = db.get_unextracted_docs(cn_conn, "v1")
+    assert len(unextracted2) == 1
+    assert unextracted2[0]["id"] == "d2"
+
+    cn_conn.close()
