@@ -433,5 +433,41 @@ def news_scan(
         typer.echo("Run `ia queue next` to get the highest-priority task.")
 
 
+@mine_app.command("first")
+def mine_first_cmd(
+    theme: str = typer.Argument(..., help="Theme ID to mine (e.g. robotics)"),
+    depth: int = typer.Option(3, "--depth", help="Expansion depth"),
+    dry_run: bool = typer.Option(False, "--dry-run"),
+):
+    """First-time deep mining for a theme (cn-extract → expand)."""
+    from industry_analysis.datasource.cn_extract import CnExtractor
+    from industry_analysis.mine.first import mine_first
+
+    cfg = get_settings()
+    cn_db = cfg.resolved_cn_filings_db()
+    if cn_db is None:
+        typer.echo("CN filings database not configured", err=True)
+        raise typer.Exit(1)
+    ds = _datasource_db()
+    s, c = _store(), _client()
+
+    if dry_run:
+        from industry_analysis.mine.state import get_theme_state
+        state = get_theme_state(s, theme)
+        typer.echo(f"[dry-run] mine first --theme {theme} state={state.value}")
+        return
+
+    extractor = CnExtractor(str(cn_db), ds)
+    result = mine_first(s, c, extractor, theme, depth=depth)
+    typer.echo(
+        f"mine first done: theme={result.theme_id} "
+        f"sections={result.extract_sections} "
+        f"created={result.nodes_created} "
+        f"elapsed={result.elapsed_s:.0f}s"
+    )
+    for e in result.errors:
+        typer.echo(f"  ERROR: {e}", err=True)
+
+
 if __name__ == "__main__":
     app()
