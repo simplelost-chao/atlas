@@ -14,8 +14,6 @@ from ..datasource.cn_extract import CnExtractor, EXTRACTOR_VERSION
 from ..graph.models import EvidenceGrade, NodeStatus, NodeType
 from ..graph.store import GraphStore
 from ..mining.engine import expand
-from .state import _load_keywords
-
 
 @dataclass
 class UpdateResult:
@@ -63,12 +61,10 @@ def mine_update(store: GraphStore, client, datasource,
 
     for theme_id in theme_ids:
         # ── C branch: re-extract new docs, re-score affected nodes ──
-        keywords = _load_keywords(theme_id)
-        if keywords:
-            try:
-                _run_c_branch(store, extractor, datasource, theme_id, result)
-            except Exception as e:
-                result.errors.append(f"C-branch {theme_id}: {e}")
+        try:
+            _run_c_branch(store, extractor, datasource, theme_id, result)
+        except Exception as e:
+            result.errors.append(f"C-branch {theme_id}: {e}")
 
         # ── A branch: expand upstream leaf nodes ──
         try:
@@ -106,14 +102,14 @@ def _run_c_branch(store: GraphStore, extractor: CnExtractor,
             result.errors.append(f"extract {symbol}: {e}")
             continue
 
-        # Re-score nodes whose name or aliases match this symbol
+        # Re-score all confirmed non-theme nodes in this theme.
+        # _rescore_node queries FTS by node name, so it will find
+        # relevant evidence regardless of which symbol was just extracted.
         theme_nodes = [
             n for n in store.list_nodes()
             if theme_id in n.theme_ids
             and n.node_type != NodeType.theme
-            and (symbol.lower() in (n.name_cn or "").lower()
-                 or symbol.lower() in (n.name_en or "").lower()
-                 or any(symbol.lower() in a.lower() for a in n.aliases))
+            and n.status == NodeStatus.confirmed
         ]
         for node in theme_nodes:
             _rescore_node(store, datasource, node, result)
