@@ -485,6 +485,9 @@ def mine_update_cmd(
         typer.echo("CN filings database not configured", err=True)
         raise typer.Exit(1)
     ds = _datasource_db()
+    if ds is None:
+        typer.echo("datasource_db not configured", err=True)
+        raise typer.Exit(1)
     s, c = _store(), _client()
 
     theme_ids = None if (theme is None or theme == "all") else [theme]
