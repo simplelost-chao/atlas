@@ -9,6 +9,8 @@ from __future__ import annotations
 
 import time
 import httpx
+
+_MAX_RETRIES = 4
 from ..models import NewsArticle
 
 _BASE = "https://api.gdeltproject.org/api/v2/doc/doc"
@@ -63,8 +65,18 @@ def fetch(
 
     try:
         time.sleep(rate_limit)
-        r = httpx.get(_BASE, params=params, timeout=15, follow_redirects=True)
-        r.raise_for_status()
+        delay = 1.0
+        r = None
+        for attempt in range(_MAX_RETRIES):
+            try:
+                r = httpx.get(_BASE, params=params, timeout=15, follow_redirects=True)
+                r.raise_for_status()
+                break
+            except (httpx.HTTPError, httpx.TimeoutException) as exc:
+                if attempt == _MAX_RETRIES - 1:
+                    return []
+                time.sleep(delay)
+                delay *= 2
         data = r.json()
     except Exception:
         return []
