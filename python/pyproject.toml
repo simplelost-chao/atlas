@@ -17,6 +17,7 @@ dependencies = [
     "loguru>=0.7",
     "pdfminer.six>=20221105",
     "edgartools>=5.0",
+    "finvizfinance>=0.14",
 ]
 
 [project.optional-dependencies]
