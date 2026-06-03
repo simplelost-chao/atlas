@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<title>Atlas — 挖掘队列</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, "PingFang SC", sans-serif; background: #0f1117; color: #e2e8f0; }
+#toolbar { display: flex; gap: 10px; align-items: center; padding: 10px 16px; background: #1a1d27; border-bottom: 1px solid #2d3148; }
+#toolbar h1 { font-size: 14px; font-weight: 600; color: #a78bfa; }
+select, input, button { background: #252836; border: 1px solid #3d4266; color: #e2e8f0; padding: 4px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; }
+button:hover { background: #3d4266; }
+#add-form { display: flex; gap: 8px; margin-left: auto; }
+#add-form input { width: 180px; }
+table { width: 100%; border-collapse: collapse; font-size: 12px; }
+th { background: #1a1d27; text-align: left; padding: 8px 12px; color: #64748b; font-weight: 500; border-bottom: 1px solid #2d3148; }
+td { padding: 8px 12px; border-bottom: 1px solid #1a1d27; vertical-align: middle; }
+tr:hover { background: #1a1d27; }
+.score { font-weight: 600; }
+.score.high { color: #34d399; }
+.score.mid { color: #fbbf24; }
+.score.low { color: #f87171; }
+.status { padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+.s-queued { background:#1e3a5f; color:#60a5fa; }
+.s-inbox { background:#252836; color:#94a3b8; }
+.s-expanding { background:#064e3b; color:#34d399; }
+.s-done { background:#1f2937; color:#9ca3af; }
+.s-rejected { background:#2d1818; color:#f87171; }
+.s-monitor { background:#2d1a00; color:#fb923c; }
+.actions button { padding: 2px 8px; font-size: 11px; margin-right: 4px; }
+#stats { font-size: 11px; color: #64748b; }
+</style>
+</head>
+<body>
+<div id="toolbar">
+  <h1>Atlas 挖掘队列</h1>
+  <select id="status-filter" onchange="load()">
+    <option value="">全部状态</option>
+    <option value="inbox">inbox</option>
+    <option value="queued" selected>queued</option>
+    <option value="expanding">expanding</option>
+    <option value="done">done</option>
+    <option value="rejected">rejected</option>
+    <option value="monitor">monitor</option>
+  </select>
+  <span id="stats"></span>
+  <div id="add-form">
+    <input id="add-node" placeholder="节点 ID (e.g. mlcc)" />
+    <input id="add-summary" placeholder="信号描述" />
+    <button onclick="addTask()">+ 手动添加</button>
+  </div>
+  <button onclick="load()">刷新</button>
+</div>
+<table id="table">
+  <thead><tr>
+    <th>ID</th><th>分数</th><th>状态</th><th>节点</th><th>信号</th>
+    <th>来源</th><th>时间</th><th>操作</th>
+  </tr></thead>
+  <tbody id="tbody"></tbody>
+</table>
+
+<script>
+async function load() {
+  const status = document.getElementById('status-filter').value;
+  const url = '/api/queue' + (status ? `?status=${status}&limit=100` : '?limit=100');
+  const tasks = await fetch(url).then(r => r.json());
+  document.getElementById('stats').textContent = `${tasks.length} 条`;
+  const tbody = document.getElementById('tbody');
+  tbody.innerHTML = '';
+  for (const t of tasks) {
+    const sc = t.priority_score >= 80 ? 'high' : t.priority_score >= 50 ? 'mid' : 'low';
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td style="font-family:monospace;color:#64748b">${t.id}</td>
+      <td><span class="score ${sc}">${t.priority_score}</span></td>
+      <td><span class="status s-${t.status}">${t.status}</span></td>
+      <td>${t.root_node}</td>
+      <td style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"
+          title="${t.trigger_summary}">${t.trigger_summary}</td>
+      <td>${t.source || '-'}</td>
+      <td style="color:#64748b">${(t.signal_date||'').substring(0,10)}</td>
+      <td class="actions">
+        <button onclick="setStatus('${t.id}','done')">Done</button>
+        <button onclick="setStatus('${t.id}','rejected')">Reject</button>
+        <button onclick="del('${t.id}')">Del</button>
+      </td>`;
+    tbody.appendChild(row);
+  }
+}
+
+async function setStatus(id, status) {
+  await fetch(`/api/queue/${id}`, {method:'PATCH', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({status})});
+  load();
+}
+
+async function del(id) {
+  if (!confirm(`删除任务 ${id}?`)) return;
+  await fetch(`/api/queue/${id}`, {method:'DELETE'});
+  load();
+}
+
+async function addTask() {
+  const node = document.getElementById('add-node').value.trim();
+  const summary = document.getElementById('add-summary').value.trim();
+  if (!node || !summary) { alert('节点 ID 和信号描述不能为空'); return; }
+  await fetch('/api/queue', {method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({driver_type:'news', root_node:node,
+                          trigger_summary:summary, source:'manual', source_grade:'D'})});
+  document.getElementById('add-node').value = '';
+  document.getElementById('add-summary').value = '';
+  load();
+}
+
+load();
+</script>
+</body>
+</html>
