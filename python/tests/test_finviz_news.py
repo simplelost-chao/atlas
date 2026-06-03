@@ -41,3 +41,27 @@ def test_fetch_finviz_handles_exception_gracefully():
     with patch("finvizfinance.news.News", side_effect=Exception("network error")):
         articles = fetch_finviz_news()
     assert articles == []
+
+
+def test_fetch_finviz_news_handles_import_error():
+    """Gracefully returns [] when finvizfinance not installed."""
+    import sys
+    saved = sys.modules.get("finvizfinance.news")
+    sys.modules["finvizfinance.news"] = None  # simulate missing
+    try:
+        articles = fetch_finviz_news()
+        assert articles == []
+    finally:
+        if saved is not None:
+            sys.modules["finvizfinance.news"] = saved
+        else:
+            sys.modules.pop("finvizfinance.news", None)
+
+
+def test_fetch_finviz_ticker_handles_exception():
+    """Gracefully returns [] when ticker_news() raises."""
+    mock_quote = MagicMock()
+    mock_quote.ticker_news.side_effect = ConnectionError("network error")
+    with patch("finvizfinance.quote.finvizfinance", return_value=mock_quote):
+        articles = fetch_finviz_ticker("NVDA")
+    assert articles == []

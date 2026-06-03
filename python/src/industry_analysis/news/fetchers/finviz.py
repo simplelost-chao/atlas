@@ -15,7 +15,10 @@ def fetch_finviz_news(max_articles: int = 50) -> list[NewsArticle]:
     """Fetch general US financial news from Finviz."""
     try:
         from finvizfinance.news import News
-        rows = News().get_news().get("news", [])
+    except ImportError:
+        return []
+    try:
+        rows = News().get_news().get("news", []) or []
     except Exception:
         return []
 
@@ -42,12 +45,15 @@ def fetch_finviz_ticker(ticker: str) -> list[NewsArticle]:
     """Fetch news for a specific US ticker from Finviz."""
     try:
         from finvizfinance.quote import finvizfinance
-        rows = finvizfinance(ticker).ticker_news()
+    except ImportError:
+        return []
+    try:
+        rows = finvizfinance(ticker).ticker_news() or []
     except Exception:
         return []
 
     articles = []
-    for row in (rows or []):
+    for row in rows:
         try:
             title = str(row.get("title", "") or "")
             if not title:
