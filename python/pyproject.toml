@@ -18,6 +18,7 @@ dependencies = [
     "pdfminer.six>=20221105",
     "edgartools>=5.0",
     "finvizfinance>=0.14",
+    "akshare>=1.14",
 ]
 
 [project.optional-dependencies]
