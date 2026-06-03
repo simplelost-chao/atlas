@@ -57,13 +57,31 @@ def test_fetch_jinshi_macro_returns_articles():
 
 
 def test_fetch_all_akshare_returns_combined():
+    """Combined fetch from all sources returns articles from each."""
     with patch("akshare.stock_info_global_cls", return_value=_cls_df()), \
-         patch("akshare.js_news", return_value=_js_df(), create=True):
-        articles = fetch_all_akshare()
-    assert len(articles) >= 2
+         patch("akshare.js_news", return_value=_js_df(), create=True), \
+         patch("akshare.stock_news_em", return_value=_em_df()):
+        articles = fetch_all_akshare(em_keywords=["MLCC"])  # 1 EM keyword only
+    # CLS contributes 1, JS contributes 1, EM contributes 1 = 3 total
+    assert len(articles) == 3
 
 
 def test_fetch_cls_handles_empty_df():
     with patch("akshare.stock_info_global_cls", return_value=pd.DataFrame()):
         articles = fetch_cls_telegraph()
     assert articles == []
+
+
+def test_fetch_cls_handles_import_error():
+    """Gracefully returns [] when akshare is not installed."""
+    import sys
+    saved = sys.modules.get("akshare")
+    sys.modules["akshare"] = None  # simulate missing package
+    try:
+        articles = fetch_cls_telegraph()
+        assert articles == []
+    finally:
+        if saved is not None:
+            sys.modules["akshare"] = saved
+        else:
+            sys.modules.pop("akshare", None)

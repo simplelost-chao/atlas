@@ -21,6 +21,9 @@ def fetch_cls_telegraph(n: int = 50) -> list[NewsArticle]:
     """财联社电报 — best source for supply-chain event signals."""
     try:
         import akshare as ak
+    except ImportError:
+        return []
+    try:
         df = ak.stock_info_global_cls()
     except Exception:
         return []
@@ -49,6 +52,9 @@ def fetch_em_news(keyword: str) -> list[NewsArticle]:
     """东方财富关键词新闻."""
     try:
         import akshare as ak
+    except ImportError:
+        return []
+    try:
         df = ak.stock_news_em(symbol=keyword)
     except Exception:
         return []
@@ -77,6 +83,9 @@ def fetch_jinshi_macro() -> list[NewsArticle]:
     """金十数据 — macro/commodity news affecting raw material costs."""
     try:
         import akshare as ak
+    except ImportError:
+        return []
+    try:
         df = ak.js_news()
     except Exception:
         return []
