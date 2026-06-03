@@ -497,5 +497,24 @@ def mine_update_cmd(
         typer.echo(f"  ERROR: {e}", err=True)
 
 
+@app.command("daily")
+def daily_cmd(
+    since: int = typer.Option(24, "--since", help="News lookback window in hours"),
+    dry_run: bool = typer.Option(False, "--dry-run", help="Fetch+filter+scan but do not write to queue"),
+    limit: int = typer.Option(3, "--limit", help="Max auto-expand calls (default 3)"),
+):
+    """Daily news scan: fetch → keyword filter → scan → queue → auto-expand."""
+    from industry_analysis.daily import run_daily
+    from industry_analysis.queue.store import QueueStore
+
+    s, c = _store(), _client()
+    qs = QueueStore(get_settings().resolved_db_path())
+    result = run_daily(s, c, qs, since_hours=since,
+                       auto_expand_limit=limit, dry_run=dry_run)
+    typer.echo(result.summary())
+    for e in result.errors:
+        typer.echo(f"  ERROR: {e}", err=True)
+
+
 if __name__ == "__main__":
     app()
